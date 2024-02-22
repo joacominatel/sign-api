@@ -87,6 +87,13 @@ def add_task():
     except Exception as e:
         print(e)
         return jsonify({'message': 'Error adding task'})
+    
+@app.route('/tasks', methods=['GET'])
+def tasks():
+    if 'username' in session:
+        return render_template('tasks.html', tasks=get_tasks())
+    else:
+        return redirect('/denied')
 
 @app.route('/register', methods=['POST'])
 def register():

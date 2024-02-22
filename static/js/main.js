@@ -83,3 +83,7 @@ function createTaskForm( event ) {
         console.log(error);
     });
 }
+
+function redirectTasks() {
+    window.location.href = '/tasks';
+}
