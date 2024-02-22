@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/register.css') }}"
+    />
+    <!-- Register CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+    />
+    <!-- Font Awesome -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Axios -->
+  </head>
+  <body>
+    <main>
+      <div class="container">
+        <form class="form" id="register-form" onsubmit="registerUser(event)">
+          <p class="title">Register</p>
+          <p class="message">Signup now and get full access to our app.</p>
+          <div class="flex">
+            <label for="username">
+              <input required="" type="text" class="input" id="username" />
+              <span>Username</span>
+            </label>
+
+            <label for="name">
+              <input required="" type="text" class="input" id="name" />
+              <span>Name</span>
+            </label>
+          </div>
+
+          <label for="email">
+            <input required="" type="email" class="input" id="email" />
+            <span>Email</span>
+          </label>
+
+          <label for="password">
+            <input required="" type="password" class="input" id="password" />
+            <span>Password</span>
+          </label>
+
+          <label for="confirmPassword">
+            <input required="" type="password" class="input" id="confirmPassword" />
+            <span>Confirm password</span>
+          </label>
+
+          <button class="submit" id="register">Submit</button>
+          <p class="signin">
+            Already have an acount ? <a href="{{ url_for('login') }}">Signin</a>
+          </p>
+        </form>
+      </div>
+    </main>
+    <script src="{{ url_for('static', filename='js/auth/forms.js') }}"></script>
+  </body>
+</html>

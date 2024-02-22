@@ -1,0 +1,547 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    height: 100vh;
+    background-color: #f5f5f5;
+}
+
+body.dark {
+    background-color: #333;
+    color: #fff;
+}
+
+header {
+    position: fixed;
+    top: 25px;
+    left: 0;
+    width: 60%;
+    background-color: #333;
+    color: #fff;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    left: 50%;
+    transform: translateX(-50%);
+    align-items: center;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    background-color: mediumpurple;
+}
+
+header.dark {
+    background-color: mediumslateblue;
+}
+
+header nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+header nav ul {
+    display: flex;
+    gap: 20px;
+    list-style: none;
+}
+
+header nav ul li {
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+header nav ul li:hover {
+    background-color: mediumslateblue;
+}
+
+body.dark header nav ul li:hover {
+    background-color: mediumpurple;
+}
+
+header nav ul li a {
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+
+}
+
+header nav ul .input {
+    /* profile menu desplegable */
+    position: relative;
+    width: auto;
+    padding: 0;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+    outline: none;
+}
+
+nav .fa-moon {
+    font-size: 20px;
+    cursor: pointer;
+}
+
+nav .fa-moon:hover {
+    color: #f5f5f5;
+}
+
+header nav ul .input input {
+    display: none;
+}
+
+header nav ul .input label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+header nav ul .input label .profile-picture {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+}
+
+header nav ul .input label .profile-picture:hover,
+header nav ul .input label .profile-picture:active,
+header nav ul .input label .profile-picture:focus {
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+
+
+header nav ul .input label .profile-picture img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+header nav ul .input .profile-menu {
+    position: absolute;
+    top: 50px;
+    right: 0;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+header nav ul .input input:checked ~ .profile-menu {
+    display: flex;
+}
+
+header nav ul .input .profile-menu ul {
+    list-style: none;
+    padding: 0 20px;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+header nav ul .input .profile-menu ul li {
+    padding: 10px 20px;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: start;
+    gap: 10px;
+    border-radius: 10px;
+}
+
+header nav ul .input .profile-menu ul li i {
+    font-size: 20px;
+    color: #333;
+}
+
+header nav ul .input .profile-menu ul li:hover {
+    background-color: #f5f5f5;
+}
+
+header nav ul .input .profile-menu ul li a {
+    color: #333;
+    text-decoration: none;
+}
+
+header nav ul .input .profile-menu ul li a:hover {
+    text-decoration: underline;
+}
+
+header nav ul .input .profile-menu ul li:last-child {
+    border-top: 1px solid #f5f5f5;
+}
+
+body section {
+    height: 100vh;
+    width: 100%;
+}
+
+body section#main {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+}
+
+body section#main aside {
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+body section#main aside h1 {
+    font-size: 2em;
+    font-weight: 700;
+}
+
+body section#main aside p {
+    font-size: 1.2em;
+    font-weight: 400;
+    color: #333;
+}
+
+body section#main aside button {
+    /* register button */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: mediumpurple;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+body section#main aside button:hover {
+    background-color: mediumslateblue;
+}
+
+body section#main aside button:active {
+    transform: scale(0.95);
+}
+
+body section#main aside button:focus {
+    outline: none;
+}
+
+section#main aside .last-tasks-resume {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+section#main aside .last-tasks-resume h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+}
+
+section#main aside .last-tasks-resume ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+section#main aside .last-tasks-resume ul li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 10px;
+    background-color: #f5f5f5;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+section#main aside .last-tasks-resume ul li span {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    padding: 8px;
+    border-radius: 3px;
+}
+
+section#main aside .last-tasks-resume ul li span a {
+    text-decoration: none;
+    color: #333;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    font-size: 1.3em;
+}
+
+section#main aside .last-tasks-resume ul li span a:hover {
+    color: mediumslateblue;
+}
+
+section#main aside .last-tasks-resume ul li .buttons-funcs  .delete-button {
+    /* display: flex; */
+    right: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+section#main aside .last-tasks-resume ul li .buttons-funcs  .delete-button i {
+    font-size: 1.3em;
+    cursor: pointer;
+}
+
+section#main aside .last-tasks-resume ul li .buttons-funcs  .delete-button button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: #f09c9c;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+section#main aside .last-tasks-resume ul li i {
+    font-size: 1.3em;
+    cursor: pointer;
+}
+
+section#main aside .last-tasks-resume ul li .buttons-funcs {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+
+}
+
+section#main aside .last-tasks-resume ul li .buttons-funcs  input {
+    /* checkbox of task */
+    display: block;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #333;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+section#main aside .last-tasks-resume ul li  .buttons-funcs input:checked {
+    background-color: mediumslateblue;
+    border: 1px solid mediumslateblue;
+}
+
+section#main aside .last-tasks-resume ul li .buttons-funcs  input:checked::after {
+    content: "";
+    display: block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #fff;
+    position: relative;
+    top: 5px;
+    left: 5px;
+}
+
+section#main aside .last-tasks-resume ul li .buttons-funcs  input:focus {
+    outline: none;
+}
+
+section#main aside .last-tasks-resume ul li .buttons-funcs  input:hover {
+    background-color: #f5f5f5;
+}
+
+section#main aside .last-tasks-resume ul li .buttons-funcs  input:active {
+    transform: scale(0.95);
+}
+
+section#main aside .last-tasks-resume ul li .buttons-funcs  input:active::after {
+    background-color: #f5f5f5;
+}
+
+body section#main aside .last-tasks-resume ul li:hover {
+    background-color: #f5f5f5;
+}
+
+/* if not tasks */
+section#main aside .last-tasks-resume .no-task-completed {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border-radius: 10px;
+    background-color: #f5f5f5;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+section#main aside .last-tasks-resume .no-task-completed p {
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+section#main aside .last-tasks-resume .no-task-completed button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: mediumpurple;
+    color: #fff;
+    text-align: center;
+    font-weight: 700;
+    font-size: 1.2em;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+section#main aside .last-tasks-resume .no-task-completed button:hover {
+    background-color: mediumslateblue;
+}
+
+section#main aside .last-tasks-resume .no-task-completed button:active {
+    transform: scale(0.95);
+}
+
+section#main aside .last-tasks-resume .no-task-completed button i {
+    font-size: 1rem;
+}
+
+section#main aside .last-tasks-resume .no-task-completed button p {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #fff;
+}
+
+section#main aside .last-tasks-resume .no-task-completed button:focus {
+    outline: none;
+}
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    z-index: 1000;
+    border-radius: 10px;
+}
+
+.modal.active {
+    display: flex;
+}
+
+.modal .modal-create-task {
+    width: 400px;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    flex-direction: column;
+    gap: 20px;
+}
+
+.modal-create-task .modal-content {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-create-task .modal-content span {
+    /* &times */
+    font-size: 2em;
+    cursor: pointer;
+    align-self: flex-end;
+}
+
+.modal-create-task .modal-content h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+}
+
+.modal-create-task .modal-content form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal-create-task .modal-content form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.modal-create-task .modal-content form .form-group label {
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.modal-create-task .modal-content form .form-group input {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: #f5f5f5;
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.modal-create-task .modal-content form .form-group textarea {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: #f5f5f5;
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.modal-create-task .modal-content form .form-group input:focus {
+    outline: none;
+}
+
+.modal-create-task .modal-content form .form-group input::placeholder {
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.modal-create-task .modal-content form .form-group input[type="date"] {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: #f5f5f5;
+    font-size: 1.2em;
+    font-weight: 700;
+}
+
+.modal-create-task .modal-content form .form-group button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: mediumpurple;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.modal-create-task .modal-content form .form-group button:hover {
+    background-color: mediumslateblue;
+}
+
+.modal-create-task .modal-content form .form-group button:active {
+    transform: scale(0.95);
+}

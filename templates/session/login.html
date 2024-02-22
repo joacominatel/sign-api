@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/register.css') }}"
+    />
+    <!-- Register CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css"
+    />
+    <!-- Font Awesome -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Axios -->
+  </head>
+  <body>
+    <main>
+      <div class="container">
+        <form class="form" id="register-form" onsubmit="loginUser(event)">
+          <p class="title">Login</p>
+          <p class="message">Signin now</p>
+            <label for="username">
+              <input required="" type="text" class="input" id="username" />
+              <span>Username or email</span>
+            </label>
+
+          <label for="password">
+            <input required="" type="password" class="input" id="password" />
+            <span>Password</span>
+          </label>
+
+          <button class="submit" id="register">Submit</button>
+          <p class="signin">
+            Create an acount <a href="{{ url_for('register') }}">Signup</a>
+          </p>
+        </form>
+      </div>
+    </main>
+    <script src="{{ url_for('static', filename='js/auth/forms.js') }}"></script>
+  </body>
+</html>

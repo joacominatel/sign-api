@@ -1,0 +1,104 @@
+{% extends 'base.html' %} {% block content %}
+<section id="main">
+  <aside>
+    <h1>Control de tareas a tiempo real...</h1>
+    {% if session['username'] %}
+    <p>Bienvenido, <strong>{{ session['username'] }}</strong>.</p>
+    {% else %}
+    <p>Bienvenido, por favor inicia sesión o registrate para continuar.</p>
+    <button>
+      <a href="{{ url_for('register') }}">Regístrate</a>
+    </button>
+    {% endif %}
+  </aside>
+  <aside>
+    {% if session['username'] %}
+    <!-- last 3 tasks created -->
+    <div class="last-tasks-resume">
+      <h2>Últimas tareas creadas</h2>
+      <ul id="task-list">
+        <!-- cheuqear si hay tareas -->
+        {% if tasks %}
+            {% for task in tasks[:3] %}
+                <li>
+                <span>
+                    <i class="fas fa-tasks"></i>
+                    <a href="{{ url_for('login') }}">{{ task[2] }}</a>
+                </span>
+                <div class="buttons-funcs">
+                    <!-- input checkbox if completed -->
+                    <input class="task-checkbox" type="checkbox" {% if task[5] == 1 %}
+                    checked {% endif %} data-id="{{ task[0] }}"
+                    onchange="updateTaskCompletion(this)">
+                    <div class="delete-button">
+                        <button onclick="deleteTask(this)" data-id="{{ task[0] }}">
+                        <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                </li>
+                <!-- si hay menos de 3 tareas mostrar mensaje -->
+                {% if loop.last %}
+                <div class="no-task-completed">
+                    <button onclick="createTask()">
+                    <i class="fas fa-plus"></i>
+                    <p>
+                        Crea una tarea
+                    </p>
+                    </button>
+                </div>
+                {% endif %}
+            {% endfor %} {% else %}
+        <div class="no-task-completed">
+          <p>No hay tareas creadas.</p>
+          <button onclick="createTask()">
+            <i class="fas fa-plus"></i>
+            <p>
+                Crea una tarea
+            </p>
+          </button>
+        </div>
+        {% endif %}
+      </ul>
+      {% else %}
+      <h2>¿Qué es Chequeo de tareas?</h2>
+      <p>
+        Chequeo de tareas es una aplicación web que te permite llevar un control
+        de las tareas que tienes pendientes.
+      </p>
+      <p>Puedes crear una cuenta para empezar a utilizar la aplicación.</p>
+      <p>
+        <a href="{{ url_for('register') }}">Regístrate</a> o
+        <a href="{{ url_for('login') }}">inicia sesión</a> para empezar.
+      </p>
+      {% endif %}
+    </div>
+  </aside>
+
+  <div class="modal" id="createTaskModal">
+    <!-- modal for create task -->
+    <div class="modal-create-task">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h2>Crea una tarea</h2>
+        <form id="create-task-form" onsubmit="createTaskForm(event)">
+          <div class="form-group">
+            <label for="task-name">Nombre de la tarea</label>
+            <input type="text" id="task-name" name="task-name" required>
+          </div>
+          <div class="form-group">
+            <label for="task-description">Descripción de la tarea</label>
+            <textarea id="task-description" name="task-description" required></textarea>
+          </div>
+          <div class="form-group">
+            <label for="task-date">Fecha de entrega</label>
+            <input type="date" id="task-date" name="task-date" required>
+          </div>
+          <div class="form-group">
+            <button type="submit">Crear tarea</button>
+          </div>
+        </form>
+  </div>
+
+</section>
+{% endblock %}
