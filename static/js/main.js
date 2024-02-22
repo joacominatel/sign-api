@@ -87,3 +87,12 @@ function createTaskForm( event ) {
 function redirectTasks() {
     window.location.href = '/tasks';
 }
+
+function showCompletedTasks() {
+    const completedTasks = document.querySelectorAll('.completed');
+
+    // toggle class completed-filter
+    completedTasks.forEach(task => {
+        task.classList.toggle('completed-filter');
+    });
+}

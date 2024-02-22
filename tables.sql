@@ -31,3 +31,15 @@ VALUES (1, 'Task 1', 'Description of task 1', '2021-12-31', FALSE),
        (2, 'Task 3', 'Description of task 3', '2021-12-31', FALSE),
         (3, 'Task 4', 'Description of task 4', '2021-12-31', FALSE),
         (4, 'Task 5', 'Description of task 5', '2021-12-31', FALSE);
+
+-- Create table groups for share tasks with other users
+CREATE TABLE groups (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id),
+  group_owner_id INTEGER REFERENCES users(id),
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (user_id, group_owner_id, name)
+);

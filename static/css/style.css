@@ -30,9 +30,15 @@ header {
     left: 50%;
     transform: translateX(-50%);
     align-items: center;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 5px 5px 20px rgba(0, 0, 0, 0.4);
     border-radius: 20px;
     background-color: mediumpurple;
+}
+
+header:hover {
+    transition: all 0.3s ease;
+    box-shadow: 5px 13px 10px rgba(0, 0, 0, 0.35);
+    top: 30px
 }
 
 header.dark {
@@ -550,6 +556,18 @@ section#main aside .last-tasks-resume .no-task-completed button:focus {
     transform: scale(0.95);
 }
 
+.tasks-list-funcs {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 30px;
+    box-shadow: 2px 2px 12px rgba(0, 0, 0, 0.3);
+    justify-content: center;
+    align-items: start;
+}
+
 .all-tasks {
     display: grid;
     gap: 20px;
@@ -569,6 +587,10 @@ section#main aside .last-tasks-resume .no-task-completed button:focus {
     display: flex;
     flex-direction: column;
     gap: 20px;
+}
+
+.all-tasks .card.completed-filter {
+    display: none;
 }
 
 .all-tasks .card .card-header {
@@ -616,4 +638,45 @@ section#all-tasks {
 section#all-tasks h1 {
     font-size: 2em;
     font-weight: 700;
+    margin-bottom: 5rem;
+}
+
+.tasks-list-funcs .tasks-functions {
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+    margin: 0 5px;
+
+}
+
+.tasks-list-funcs .tasks-functions .add-task {
+    padding: 7px 9px;
+    border: none;
+    border-radius: 50%;
+    background-color: rgb(125, 208, 125);
+    color: #fff;
+    font-size: 1em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tasks-list-funcs .tasks-functions .filter-task {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.tasks-list-funcs .tasks-functions .filter-task input[type="checkbox"] {
+    display: block;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #333;
+    border-radius: 50%;
+    cursor: pointer;
 }

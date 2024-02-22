@@ -4,30 +4,42 @@
     <h1>
         Lista de tareas
     </h1>
-    <ul class="all-tasks">
-        {% for task in tasks %}
-            <div class="card">
-                <div class="card-header">
-                    <h2>{{ task[2] }}</h2>
-                    <br>
-                </div>
-                <div class="card-body">
-                    <p>{{ task[3] }}</p>
-                </div>
-                <div class="card-footer">
-                    <div class="buttons-funcs">
-                        <input class="task-checkbox" type="checkbox" {% if task[5] == 1 %}
-                        checked {% endif %} data-id="{{ task[0] }}"
-                        onchange="updateTaskCompletion(this)">
-                        <div class="delete-button">
-                            <button onclick="deleteTask(this)" data-id="{{ task[0] }}">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
+    <div class="tasks-list-funcs">
+        <div class="tasks-functions">
+            <div class="add-task">
+                <i class='fas fa-plus' id="add-task" onclick="createTask()"></i>
+            </div>
+            <div class="filter-task">
+                <p>Completadas?</p>
+                <input type="checkbox" id="show-completed" onchange="showCompletedTasks(this)">
+            </div>
+        </div>
+
+        <ul class="all-tasks">
+            {% for task in tasks %}
+                <div class="card {% if task[5] == 1 %} completed {% endif %}">
+                    <div class="card-header">
+                        <h2>{{ task[2] }}</h2>
+                        <br>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ task[3] }}</p>
+                    </div>
+                    <div class="card-footer">
+                        <div class="buttons-funcs">
+                            <input class="task-checkbox" type="checkbox" {% if task[5] == 1 %}
+                            checked {% endif %} data-id="{{ task[0] }}"
+                            onchange="updateTaskCompletion(this)">
+                            <div class="delete-button">
+                                <button onclick="deleteTask(this)" data-id="{{ task[0] }}">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        {% endfor %}
-    </ul>
+            {% endfor %}
+        </ul>
+    </div>
 </section>
 {% endblock %}

@@ -39,6 +39,10 @@ def main():
         return render_template('index.html', tasks=get_tasks())
     else:
         return render_template('index.html')
+    
+@app.route('/home', methods=['GET'])
+def home():
+    return redirect('/')
 
 
 @app.route('/get_tasks', methods=['GET'])
@@ -159,6 +163,13 @@ def dashboard():
             return render_template('dashboard.html')
         else:
             return redirect('/denied')
+
+@app.route('/config_user', methods=['GET'])
+def config_user():
+    if 'username' in session:
+        return render_template('config/config_user.html', title=f'Configuración de {session["username"]}')
+    else:
+        return redirect('/denied')
 
 if __name__ == '__main__':
     app.run(debug=True, port=8001)
