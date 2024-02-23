@@ -129,15 +129,16 @@ def login():
         if user:
             session['username'] = data['username']
             response = {
+                'status': 'success',  # Indicate a successful login
                 'message': 'Logged in',
                 'username': session['username']
             }
-            return jsonify(response)
+            return jsonify(response), 200
         else:
-            return jsonify({'message': 'Invalid username or password'})
+            return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401  # Use appropriate status code
     except Exception as e:
         print(e)
-        return jsonify({'message': 'Error logging in'})
+        return jsonify({'status': 'error', 'message': 'Error logging in'}), 500  # Use appropriate status code
 
 @app.route('/login', methods=['GET'])
 def login_form():

@@ -38,7 +38,7 @@ header {
 header:hover {
     transition: all 0.3s ease;
     box-shadow: 5px 13px 10px rgba(0, 0, 0, 0.35);
-    top: 30px
+    top: 27px
 }
 
 header.dark {
@@ -212,6 +212,30 @@ body section#main aside {
     display: flex;
     flex-direction: column;
     gap: 20px;
+}
+
+section#main aside .main-subtitle {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+aside .main-subtitle h1 {
+    font-size: 2em;
+    font-weight: 700;
+}
+
+aside .main-subtitle button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: mediumpurple;
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 body section#main aside h1 {

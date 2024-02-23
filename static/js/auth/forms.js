@@ -1,6 +1,3 @@
-console.log("forms.js and axios loaded");
-
-// on submit of button post data to server with axios
 function registerUser(e) {
   e.preventDefault();
 
@@ -50,17 +47,17 @@ function loginUser(e) {
   axios
     .post("/login", data)
     .then((res) => {
-      response = res.data;
-      if (response.status == "error") {
-        alert(response.message);
+      const response = res.data;
+      if (response.status === "error") {
+        toastr.error(response.message); // Muestra mensaje de error
         return;
       } else {
-        alert("User logged in");
-        window.location.href = "/";
+        toastr.success("User logged in"); // Muestra mensaje de éxito
+        window.location.href = "/"; // Redirect on successful login
       }
     })
     .catch((err) => {
       console.log(err);
-      alert("Error logging in user");
+      toastr.error("Error logging in"); // Muestra mensaje de error
     });
 }

@@ -3,7 +3,13 @@
   <aside>
     <h1>Control de tareas a tiempo real...</h1>
     {% if session['username'] %}
-    <p>Bienvenido, <strong>{{ session['username'] }}</strong>.</p>
+    <div class="main-subtitle">      
+      <p>Bienvenido, <strong>{{ session['username'] }}</strong>.</p>
+      <button onclick="showNotification()">
+        <i class="fas fa-bell"></i>
+        <span id="notification-count"></span>
+      </button>
+    </div>
     {% else %}
     <p>Bienvenido, por favor inicia sesión o registrate para continuar.</p>
     <button>
