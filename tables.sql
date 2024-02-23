@@ -22,7 +22,9 @@ CREATE TABLE tasks (
   completed BOOLEAN DEFAULT FALSE
 );
 
-UPDATE users SET role = 'admin' WHERE id = 0;
+-- Inser user admin
+INSERT INTO users (username, password, name, email, role)
+VALUES ('admin', 'admin', 'Admin', 'admin@admin.com', 'admin');
 
 -- insert example data on table tasks
 INSERT INTO tasks (user_id, title, description, due_date, completed)

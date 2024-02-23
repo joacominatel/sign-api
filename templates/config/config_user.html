@@ -1,4 +1,99 @@
 {% extends 'base.html' %}
-{% block content %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/config_user.css') }}">
+{% endblock %}
 
+{% block content %}
+<nav class="sidebar">
+    <ul>
+        <li id="userConfig">
+            <button
+                id="userConfigButton"
+                onclick="document.getElementById('userConfigMenu').classList.toggle('show')">
+                <i class="fas fa-cog"></i>
+                <span>Configuración</span>
+        </button>
+        </li>
+        <li id="userTasks">
+            <a href="#"> <!-- /config_user/tasks -->
+                <i class="fas fa-tasks"></i>
+                <span>Tareas</span>
+            </a>
+        </li>
+        <li id="userPrivacy">
+            <a href="#"> <!-- /config_user/privacy -->
+                <i class="fas fa-user-secret"></i>
+                <span>Privacidad</span>
+            </a>
+        </li>
+        <li id="deleteAccount">
+            <a href="#"> <!-- /config_user/delete -->
+                <i class="fas fa-user-minus"></i>
+                <span>Eliminar cuenta</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+<main>
+    <!-- Here are all menu for configurations -->
+    <div id="userConfigMenu" class="show">
+        <div class="user-config-content">
+            <div class="user-config-header">
+                <h2>Configuración personal</h2>
+                <button
+                    id="closeUserConfig"
+                    onclick="document.getElementById('userConfigMenu').classList.toggle('show')">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="user-config-body">
+                <div class="config-body group">
+                    <h3>Configuracion de cuenta</h3>
+                    <ul>
+                        <li>
+                            <button>
+                                Cambiar nombre
+                            </button>
+                        </li>
+                        <li>
+                            <button>
+                                Cambiar contraseña
+                            </button>
+                        </li>
+                        <li>
+                            <button>
+                                Cambiar correo
+                            </button>
+                        </li>
+                        <li>
+                            <button>
+                                Cambiar foto de perfil
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="config-body group">
+                    <h3>Configuracion de notificaciones</h3>
+                    <ul>
+                        <li>
+                            <button>
+                                Notificaciones de tareas
+                            </button>
+                        </li>
+                        <li>
+                            <button>
+                                Notificaciones de eventos
+                            </button>
+                        </li>
+                        <li>
+                            <button>
+                                Notificaciones de recordatorios
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
 {% endblock %}

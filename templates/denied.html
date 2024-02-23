@@ -1,5 +1,10 @@
 {% extends 'base.html' %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/denied.css') }}">
+{% endblock %}
 {% block content %}
+<div class="container denied">
     <h1>Acceso denegado</h1>
-    <p>Debes iniciar sesión para acceder a esta página.</p>
+    <p>Debes iniciar sesión como administrador para acceder a esta página.</p>
+</div>
 {% endblock %}

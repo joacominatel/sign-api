@@ -1,0 +1,21 @@
+.container.denied {
+  margin-top: 100px;
+  text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.denied h1 {
+    font-size: 2.5em;
+    color: rgb(235, 117, 109);
+    margin: 0;
+}
+
+.denied p {
+    font-size: 1.5em;
+    color: #333;
+    margin: 0;
+}

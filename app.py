@@ -150,7 +150,7 @@ def logout():
 
 @app.route('/denied', methods=['GET'])
 def denied():
-    return render_template('denied.html')
+    return render_template('denied.html', title='Acceso denegado')
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
@@ -160,7 +160,7 @@ def dashboard():
             db.execute('SELECT role FROM users WHERE username = %s', (session['username'],))
             role = db.fetchone()
         if role and role[0] == 'admin':
-            return render_template('dashboard.html')
+            return render_template('admin/dashboard.html')
         else:
             return redirect('/denied')
 
