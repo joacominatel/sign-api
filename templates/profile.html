@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+{% endblock %}
+
+{% block content %}
+<section id="profile">
+    <div class="profile-content">
+        <div class="profile-header">
+            <h2>
+                {{ session['username'] }}
+            </h2>
+            <img src="{{ url_for('static', filename='img/profile.webp') }}" alt="user">
+        </div>
+    </div>
+    <div class="profile-body">
+        <section id="datosPersonales">
+            <h3>Datos personales</h3>
+            <div class="personal-data">
+                <div class="data">
+                    <p>Nombre:</p>
+                    <p>{{ session['username'] }}</p>
+                </div>
+                <div class="data">
+                    <p>Correo:</p>
+                    <p>{{ session['email'] }}</p>
+                </div>
+                <div class="data">
+                    <p>Rol:</p>
+                    <p>{{ session['role'] }}</p>
+                </div>
+            </div>
+        </section>
+        <section id="estadisticas">
+            <h3>Estadísticas</h3>
+            <div class="statistics">
+                <div class="stat">
+                    <p>Tareas completadas:</p>
+                    <p>{{ completed_tasks }}</p>
+                </div>
+                <div class="stat">
+                    <p>Tareas pendientes:</p>
+                    <p>{{ pending_tasks }}</p>
+                </div>
+                <div class="stat">
+                    <p>Tareas totales creadas:</p>
+                    <p>{{ total_tasks }}</p>
+                </div>
+                <div class="stat">
+                    <p>Fecha de registro:</p>
+                    <p>{{ session['created_at'] }}</p>
+                </div>
+            </div>
+        </section>
+    </div>
+</section>
