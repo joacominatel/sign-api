@@ -133,7 +133,7 @@ def login():
         if user:
             session['username'] = data['username']
             with get_db() as db:
-                db.execute('SELECT username, name, profile_image_url, created_at, updated_at, email FROM users WHERE username = %s', (session['username'],))
+                db.execute('SELECT username, name, profile_image_url, created_at, updated_at, email, role FROM users WHERE username = %s', (session['username'],))
                 data = db.fetchone()
                 response = {
                     'status': 'success',  # Indicate a successful login
@@ -143,7 +143,8 @@ def login():
                     'profile_image_url': data[2],
                     'created_at': data[3],
                     'updated_at': data[4],
-                    'email': data[5]
+                    'email': data[5],
+                    'role': data[6]
                 }
                 
                 session['username'] = data[0]
@@ -152,6 +153,7 @@ def login():
                 session['created_at'] = datetime.strftime(data[3], '%Y-%m-%d %H:%M:%S')
                 session['updated_at'] = datetime.strftime(data[4], '%Y-%m-%d %H:%M:%S')
                 session['email'] = data[5]
+                session['role'] = data[6]
 
                 return jsonify(response), 200
         else:
@@ -236,6 +238,13 @@ def dashboard():
 def config_user():
     if 'username' in session:
         return render_template('config/config_user.html', title=f'Configuración de {session["username"]}')
+    else:
+        return redirect('/denied')
+    
+@app.route('/groups', methods=['GET'])
+def groups():
+    if 'username' in session:
+        return render_template('groups.html')
     else:
         return redirect('/denied')
 

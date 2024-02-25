@@ -28,7 +28,10 @@
             <ul>
                 <li><a href="{{ url_for('home') }}">Inicio</a></li>
                 <li><a href="{{ url_for('tasks') }}">Ver tareas</a></li>
-                <li><a href="{{ url_for('dashboard') }}">Admin</a></li>
+                <li><a href="{{ url_for('groups') }}">Grupos</a></li>
+                {% if session['role'] == 'admin' %}
+                    <li><a href="{{ url_for('dashboard') }}">Admin</a></li>
+                {% endif %}
             </ul>
             <ul>
                 {% if session['username'] %}
