@@ -37,13 +37,17 @@ VALUES (1, 'Task 1', 'Description of task 1', '2021-12-31', FALSE),
 -- Create table groups for share tasks with other users
 CREATE TABLE groups (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id),
-  group_owner_id INTEGER REFERENCES users(id),
   name VARCHAR(255) NOT NULL,
   description TEXT,
+  owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE (user_id, group_owner_id, name)
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE group_members (
+  group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  PRIMARY KEY (group_id, user_id)
 );
 
 ALTER TABLE users ADD COLUMN profile_image_url TEXT;

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/groups.css') }}">
+{% endblock %}
+
+{% block content %}
+<!-- si la sesion existe -->
+<div class="groups-container">
+    {% if session['username'] %}
+        <h1>Groups</h1>
+        {% if groups == [] %}
+            <li>No groups found</li>
+            <p>
+                But you can create one <a href="{{ url_for('create_group') }}">here</a>
+            </p>
+        {% endif %}
+        <ul>
+            {% for group in groups %}
+                <div class="group-card">
+                    <div class="group-card-header">
+                        <h2>{{ group[1] }}</h2>
+                        <p>{{ group[2] }}</p>
+                    </div>
+                    <div class="group-card-body">
+                        <div class="task-counter">
+                            <h2>Tareas asignadas</h2>
+                            <p><span>5</span></p>
+                        </div>
+                        <div class="group-members">
+                            <h2>Miembros</h2>
+                            <p><span>12</span></p>
+                        </div>
+                    </div>
+                    <div class="group-card-funcs">
+                        <a href="#">Ver grupo</a>
+                        {% if group[3] == session['username'] %}
+                            <a href="#">Eliminar grupo</a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <h1>Groups</h1>
+        <p>
+            You need to be logged in to see the groups
+        </p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -110,9 +110,16 @@ def register():
 
     try:
         with get_db() as db:
-            db.execute('INSERT INTO users (username, name, password, email) VALUES (%s, %s, %s, %s)', (data['username'], data['name'], data['password'], data['email']))
+            db.execute('INSERT INTO users (username, name, password, role, email, profile_image_url) VALUES (%s, %s, %s, %s, %s, %s)', (data['username'], data['name'], data['password'], 'user', data['email'], '../default-user.webp'))
     
         session['username'] = data['username']
+        session['name'] = data['name']
+        session['email'] = data['email']
+        session['profile_image_url'] = '../default-user.webp'
+        session['created_at'] = datetime.now()
+        session['updated_at'] = datetime.now()
+        session['role'] = 'user'
+         
         return redirect('/')
     except Exception as e:
         print(e)
@@ -243,10 +250,49 @@ def config_user():
     
 @app.route('/groups', methods=['GET'])
 def groups():
+    groups = []
     if 'username' in session:
-        return render_template('groups.html')
+        with get_db() as db:
+            db.execute('SELECT * FROM groups WHERE owner_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
+            groups = db.fetchall()
+        return render_template('groups/groups.html', groups=groups)
     else:
         return redirect('/denied')
+
+    
+@app.route('/groups/create', methods=['POST'])
+def create_group():
+    """
+    CREATE TABLE groups (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    description TEXT,
+    owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE group_members (
+    group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (group_id, user_id)
+    );
+    """
+    data = request.json
+
+    try:
+        with get_db() as db:
+            db.execute('INSERT INTO groups (name, description, owner_id) VALUES (%s, %s, (SELECT id FROM users WHERE username = %s))', (data['name'], data['description'], session['username']))
+            db.execute('INSERT INTO group_members (group_id, user_id) VALUES ((SELECT id FROM groups WHERE name = %s), (SELECT id FROM users WHERE username = %s))', (data['name'], session['username']))
+        return jsonify({'message': 'Group created'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Error creating group'})
+
+@app.route('/groups/create', methods=['GET'])
+def create_group_form():
+    return render_template('groups/create.html')
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=8001)

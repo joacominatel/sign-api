@@ -1,0 +1,82 @@
+.groups-container {
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 800px;
+    justify-content: center;
+    gap: 60px;
+}
+
+h1 {
+    color: mediumpurple;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.group-card {
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.group-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.group-card-header h2,
+.group-card-body h2 {
+    color: mediumpurple;
+    margin-top: 0;
+}
+
+.group-card-header p,
+.group-card-body p {
+    color: #666;
+}
+
+.group-card-funcs a {
+    display: inline-block;
+    text-decoration: none;
+    background-color: mediumpurple;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    margin-top: 10px;
+    margin-right: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.group-card-funcs a:hover {
+    background-color: darken(mediumpurple, 10%);
+}
+
+.task-counter, .group-members {
+    display: inline-block;
+    margin-right: 20px;
+}
+
+.task-counter h2, .group-members h2 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.task-counter p span, .group-members p span {
+    font-weight: bold;
+}
+
+a {
+    color: mediumpurple;
+}
+
+a:hover {
+    text-decoration: underline;
+}
