@@ -37,8 +37,12 @@
                     <input type="checkbox" id="profile-menu">
                     <label for="profile-menu">
                         <div class="profile-picture">
-                            <img src="{{ url_for('static', filename='img/profile.webp') }}" alt="profile picture">
-                        </div>
+                            {% if session['profile_image_url'] %}
+                                <img src="{{ url_for('static', filename='img/uploads/' + session['profile_image_url']) }}" alt="profile picture">
+                            {% else %}
+                                <img src="{{ url_for('static', filename='img/default-user.webp') }}" alt="profile picture">
+                            {% endif %}
+                            </div>
                     </label>
                     <div class="profile-menu">
                         <ul>

@@ -49,15 +49,17 @@ function loginUser(e) {
     .then((res) => {
       const response = res.data;
       if (response.status === "error") {
-        toastr.error(response.message); // Muestra mensaje de error
+        alert(response.message);
         return;
       } else {
-        toastr.success("User logged in"); // Muestra mensaje de éxito
-        window.location.href = "/"; // Redirect on successful login
+        alert("User logged in");
+        setTimeout(() => {
+          window.location.href = "/";
+        }, 1000);
       }
     })
     .catch((err) => {
       console.log(err);
-      toastr.error("Error logging in"); // Muestra mensaje de error
+      alert("Error logging in user");
     });
 }

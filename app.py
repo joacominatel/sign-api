@@ -2,7 +2,9 @@ import flask, psycopg2, os
 from flask import jsonify, request, render_template, redirect, url_for, session
 from contextlib import contextmanager
 from dotenv import load_dotenv
-import datetime
+from werkzeug.utils import secure_filename
+import random
+from datetime import datetime
 
 load_dotenv('.env')
 
@@ -10,6 +12,8 @@ app = flask.Flask(__name__)
 
 # Secret key
 app.secret_key = os.environ['SECRET_KEY']
+app.config['UPLOAD_FOLDER'] = os.environ['UPLOAD_FOLDER']
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
 
 # Database connection
 @contextmanager
@@ -128,12 +132,28 @@ def login():
             user = db.fetchone()
         if user:
             session['username'] = data['username']
-            response = {
-                'status': 'success',  # Indicate a successful login
-                'message': 'Logged in',
-                'username': session['username']
-            }
-            return jsonify(response), 200
+            with get_db() as db:
+                db.execute('SELECT username, name, profile_image_url, created_at, updated_at, email FROM users WHERE username = %s', (session['username'],))
+                data = db.fetchone()
+                response = {
+                    'status': 'success',  # Indicate a successful login
+                    'message': 'Logged in',
+                    'username': data[0],
+                    'name': data[1],
+                    'profile_image_url': data[2],
+                    'created_at': data[3],
+                    'updated_at': data[4],
+                    'email': data[5]
+                }
+                
+                session['username'] = data[0]
+                session['name'] = data[1]
+                session['profile_image_url'] = data[2]
+                session['created_at'] = datetime.strftime(data[3], '%Y-%m-%d %H:%M:%S')
+                session['updated_at'] = datetime.strftime(data[4], '%Y-%m-%d %H:%M:%S')
+                session['email'] = data[5]
+
+                return jsonify(response), 200
         else:
             return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401  # Use appropriate status code
     except Exception as e:
@@ -148,6 +168,53 @@ def login_form():
 def logout():
     session.pop('username', None)
     return redirect('/')
+
+@app.route('/user/update', methods=['POST'])
+def update_user():
+    # asegurar que el user este logueado
+    if 'username' not in session:
+        return redirect('/denied')
+    
+    data = request.json
+    print(data)
+    try:
+        with get_db() as db:
+            if data['name'] and data['email']:
+                db.execute('UPDATE users SET name = %s, email = %s WHERE username = %s', (data['name'], data['email'], session['username']))
+            elif data['name']:
+                db.execute('UPDATE users SET name = %s WHERE username = %s', (data['name'], session['username']))
+            elif data['email']:
+                db.execute('UPDATE users SET email = %s WHERE username = %s', (data['email'], session['username']))
+        session['name'] = data['name']
+        session['email'] = data['email']
+        return jsonify({'message': 'User updated'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Error updating user'})
+
+@app.route('/upload', methods=['POST'])
+def upload():
+    if 'username' in session:
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'message': 'No file selected'})
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename + '_' + session['username'] + '_' + str(random.randint(1000, 9999)) + '.png')
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            save_image_user_db(session['username'], filename)
+            session['profile_image_url'] = filename
+            return jsonify({'message': 'File uploaded'})
+        else:
+            return jsonify({'message': 'Invalid file'})
+    else:
+        return redirect('/denied')
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
+
+def save_image_user_db(username, filename):
+    with get_db() as db:
+        db.execute('UPDATE users SET profile_image_url = %s WHERE username = %s', (filename, username))
 
 @app.route('/denied', methods=['GET'])
 def denied():

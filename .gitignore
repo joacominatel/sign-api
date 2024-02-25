@@ -4,3 +4,4 @@
 .env
 pyvenv.cfg
 /scripts
+/static/img/uploads

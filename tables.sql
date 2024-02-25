@@ -45,3 +45,5 @@ CREATE TABLE groups (
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   UNIQUE (user_id, group_owner_id, name)
 );
+
+ALTER TABLE users ADD COLUMN profile_image_url TEXT;

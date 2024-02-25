@@ -40,60 +40,72 @@
         <div class="user-config-content">
             <div class="user-config-header">
                 <h2>Configuración personal</h2>
-                <button
-                    id="closeUserConfig"
-                    onclick="document.getElementById('userConfigMenu').classList.toggle('show')">
-                    <i class="fas fa-times"></i>
-                </button>
             </div>
             <div class="user-config-body">
-                <div class="config-body group">
-                    <h3>Configuracion de cuenta</h3>
-                    <ul>
-                        <li>
-                            <button>
-                                Cambiar nombre
-                            </button>
-                        </li>
-                        <li>
-                            <button>
-                                Cambiar contraseña
-                            </button>
-                        </li>
-                        <li>
-                            <button>
-                                Cambiar correo
-                            </button>
-                        </li>
-                        <li>
-                            <button>
-                                Cambiar foto de perfil
-                            </button>
-                        </li>
-                    </ul>
-                </div>
-                <div class="config-body group">
-                    <h3>Configuracion de notificaciones</h3>
-                    <ul>
-                        <li>
-                            <button>
-                                Notificaciones de tareas
-                            </button>
-                        </li>
-                        <li>
-                            <button>
-                                Notificaciones de eventos
-                            </button>
-                        </li>
-                        <li>
-                            <button>
-                                Notificaciones de recordatorios
-                            </button>
-                        </li>
-                    </ul>
+                <div class="user-info">
+                    <div class="profile-picture">
+                        {% if not session['profile_image_url'] %}
+                            <img id="profile-img" src="{{ url_for('static', filename='img/default-user.webp') }}" alt="profile picture">
+                        {% else %}
+                            <img id="profile-img" src="{{ url_for('static', filename='img/uploads/' + session['profile_image_url']) }}" alt="profile picture">
+                        {% endif %}
+                        <p>
+                            {{ session['username'] }}
+                        </p>
+                    </div>
+                    <form action="">
+                        <!-- user data modificable (except username) -->
+                        <div class="data-item">
+                            <label for="username">Nombre de usuario</label>
+                            <input type="text" id="username" name="username" value="{{ session['username'] }}" disabled>
+                        </div>
+                        <div class="data-item">
+                            <label for="email">Correo electrónico</label>
+                            <input type="email" id="email" name="email" value="{{ session['email'] }}" >
+                        </div>
+                        <div class="data-item">
+                            <label for="name">Nombre</label>
+                            <input type="text" id="name" name="name" value="{{ session['name'] }}">
+                        </div>
+                        <button id="modifyProfileButton" type="submit">
+                            Guardar cambios
+                        </button>
+                    </form>
+                    {% if session['created_at'] and session['updated_at'] %}
+                        <div class="data-item">
+                            <p>
+                                Usuario creado: <strong>{{ session['created_at'] }}</strong>
+                            </p>
+                        </div>
+                        <div class="data-item">
+                            <p>
+                                Última actualización: <strong>{{ session['updated_at'] }}</strong>
+                            </p>
+                        </div>
+                    {% else %}
+                    <p>
+                        Para ver estos datos, actualiza tu perfil
+                    </p>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </main>
+<div class="profile-img-menu">
+    <span id="close-profile-img-menu">
+        &times;
+    </span>
+    <div id="drop-area">
+        {% if not session['profile_image_url'] %}
+            <img id="profile-img" src="{{ url_for('static', filename='img/default-user.webp') }}" alt="profile picture">
+        {% else %}
+            <img id="profile-img" src="{{ url_for('static', filename='img/uploads/' + session['profile_image_url']) }}" alt="profile picture">
+        {% endif %}
+        <p>Arrastra y suelta una imagen aquí, o haz clic para seleccionar una</p>
+        <input type="file" id="fileElem" multiple accept="image/*" style="display:none">
+    </div>
+</div>
+<div class="overlay" id="overlay"></div>
+<script src="{{ url_for('static', filename='js/config/config_user.js') }}"></script>
 {% endblock %}
