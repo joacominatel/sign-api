@@ -8,7 +8,7 @@ CREATE TABLE users (
   password VARCHAR(255) NOT NULL,
   name VARCHAR(255),
   email VARCHAR(255),
-  role VARCHAR(255),
+  profile_image_url TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -17,22 +17,12 @@ CREATE TABLE tasks (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id),
   title VARCHAR(255) NOT NULL,
+  group_id INTEGER REFERENCES groups(id),
   description TEXT,
   due_date DATE,
+  priority INTEGER DEFAULT 0,
   completed BOOLEAN DEFAULT FALSE
 );
-
--- Inser user admin
-INSERT INTO users (username, password, name, email, role)
-VALUES ('admin', 'admin', 'Admin', 'admin@admin.com', 'admin');
-
--- insert example data on table tasks
-INSERT INTO tasks (user_id, title, description, due_date, completed)
-VALUES (1, 'Task 1', 'Description of task 1', '2021-12-31', FALSE),
-       (1, 'Task 2', 'Description of task 2', '2021-12-31', FALSE),
-       (2, 'Task 3', 'Description of task 3', '2021-12-31', FALSE),
-        (3, 'Task 4', 'Description of task 4', '2021-12-31', FALSE),
-        (4, 'Task 5', 'Description of task 5', '2021-12-31', FALSE);
 
 -- Create table groups for share tasks with other users
 CREATE TABLE groups (
@@ -50,7 +40,47 @@ CREATE TABLE group_members (
   PRIMARY KEY (group_id, user_id)
 );
 
-ALTER TABLE users ADD COLUMN profile_image_url TEXT;
+CREATE TABLE roles (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL
+);
 
--- add column to table tasks for share tasks with groups
+CREATE TABLE user_roles (
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  role_id INTEGER NOT NULL REFERENCES roles(id),
+  PRIMARY KEY (user_id, role_id)
+);
+
+
+-- add view for get count of tasks by user
+CREATE OR REPLACE VIEW tasks_count AS
+SELECT u.id AS user_id, u.username, COUNT(t.id) AS count
+FROM users u
+LEFT JOIN tasks t ON u.id = t.user_id
+GROUP BY u.id;
+
+-- add view for stats of complete app, count of users, tasks and groups
+CREATE OR REPLACE VIEW app_stats AS
+SELECT
+  (SELECT COUNT(*) FROM users) AS users_count,
+  (SELECT COUNT(*) FROM tasks) AS tasks_count,
+  (SELECT COUNT(*) FROM groups) AS groups_count;
+
+
+-- Inser user admin
+INSERT INTO users (username, password, name, email, role)
+VALUES ('admin', 'admin', 'Admin', 'admin@admin.com', 'admin');
+
+ALTER TABLE tasks
+ADD COLUMN priority INTEGER DEFAULT 0;
+
+INSERT INTO roles (name) VALUES ('user');
+INSERT INTO roles (name) VALUES ('admin');
+
+-- remove column role from users
+ALTER TABLE users DROP COLUMN role;
+
+INSERT INTO user_roles (user_id, role_id)
+VALUES ((SELECT id FROM users WHERE username = 'joacominatel'), (SELECT id FROM roles WHERE name = 'admin'));
+
 ALTER TABLE tasks ADD COLUMN group_id INTEGER REFERENCES groups(id);

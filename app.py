@@ -110,8 +110,8 @@ def register():
 
     try:
         with get_db() as db:
-            db.execute('INSERT INTO users (username, name, password, role, email, profile_image_url) VALUES (%s, %s, %s, %s, %s, %s)', (data['username'], data['name'], data['password'], 'user', data['email'], '../default-user.webp'))
-    
+            db.execute('INSERT INTO users (username, name, password, email, profile_image_url) VALUES (%s, %s, %s, %s, %s)', (data['username'], data['name'], data['password'], data['email'], '../default-user.webp'))
+            db.execute('INSERT INTO user_roles (user_id, role_id) VALUES ((SELECT id FROM users WHERE username = %s), (SELECT id FROM roles WHERE name = %s))', (data['username'], 'user'))
         session['username'] = data['username']
         session['name'] = data['name']
         session['email'] = data['email']
@@ -140,8 +140,10 @@ def login():
         if user:
             session['username'] = data['username']
             with get_db() as db:
-                db.execute('SELECT username, name, profile_image_url, created_at, updated_at, email, role FROM users WHERE username = %s', (session['username'],))
+                db.execute('SELECT username, name, profile_image_url, created_at, updated_at, email FROM users WHERE username = %s', (session['username'],))
                 data = db.fetchone()
+                db.execute('SELECT roles.name FROM roles, user_roles WHERE roles.id = user_roles.role_id AND user_roles.user_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
+                role = db.fetchone()
                 response = {
                     'status': 'success',  # Indicate a successful login
                     'message': 'Logged in',
@@ -151,7 +153,7 @@ def login():
                     'created_at': data[3],
                     'updated_at': data[4],
                     'email': data[5],
-                    'role': data[6]
+                    'role': role[0]
                 }
                 
                 session['username'] = data[0]
@@ -160,7 +162,7 @@ def login():
                 session['created_at'] = datetime.strftime(data[3], '%Y-%m-%d %H:%M:%S')
                 session['updated_at'] = datetime.strftime(data[4], '%Y-%m-%d %H:%M:%S')
                 session['email'] = data[5]
-                session['role'] = data[6]
+                session['role'] = role[0]
 
                 return jsonify(response), 200
         else:
@@ -234,12 +236,12 @@ def dashboard():
     if 'username' in session:
         # check if users has admin role in the database
         with get_db() as db:
-            db.execute('SELECT role FROM users WHERE username = %s', (session['username'],))
+            db.execute('SELECT roles.name FROM roles, user_roles WHERE roles.id = user_roles.role_id AND user_roles.user_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
             role = db.fetchone()
-        if role and role[0] == 'admin':
-            return render_template('admin/dashboard.html')
-        else:
-            return redirect('/denied')
+            if role[0] == 'admin':
+                return render_template('admin/dashboard.html', title='Dashboard')
+            else:
+                return redirect('/denied')
 
 @app.route('/config_user', methods=['GET'])
 def config_user():
@@ -260,8 +262,8 @@ def groups():
             total_members = []
             for group in groups:
                 db.execute('SELECT COUNT(*) FROM tasks WHERE group_id = %s', (group[0],))
-                db.execute('SELECT COUNT(*) FROM group_members WHERE group_id = %s', (group[0],))
                 total_tasks.append(db.fetchone()[0])
+                db.execute('SELECT COUNT(*) FROM group_members WHERE group_id = %s', (group[0],))
                 total_members.append(db.fetchone()[0])
 
         return render_template('groups/groups.html', groups=groups, total_tasks=total_tasks, total_members=total_members)

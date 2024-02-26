@@ -45,6 +45,11 @@ header.dark {
     background-color: mediumslateblue;
 }
 
+header.hidden {
+    top: -100px;
+    transition: top 0.3s ease;
+}
+
 header nav {
     display: flex;
     justify-content: space-between;

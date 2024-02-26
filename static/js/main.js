@@ -1,3 +1,6 @@
+// import toastNoti.js
+import { showNotification } from "./toastNoti.js";
+
 let changeThemeButton = document.getElementById("change-theme");
 
 changeThemeButton.addEventListener("click", function (event) {

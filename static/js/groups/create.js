@@ -8,7 +8,7 @@ function createGroup() {
     })
     .then(function (response) {
         console.log(response);
-        alert("Grupo creado exitosamente!");
+        showNotification('Grupo creado exitosamente', 'success');
     })
     .catch(function (error) {
         console.log(error);

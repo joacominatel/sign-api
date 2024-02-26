@@ -25,6 +25,9 @@
                 <div class="tareas">
                     <h2>Tareas</h2>
                     <ul>
+                        {% if tasks == [] %}
+                            <li>No hay tareas</li>
+                        {% endif %}
                         {% for task in tasks %}
                             <li>Nombre: {{ task[2] }}</li>
                             <li>Fecha: {{ task[4] }}</li>
