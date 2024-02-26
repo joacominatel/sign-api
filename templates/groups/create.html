@@ -1,15 +1,22 @@
-{% extends "base.html" %} {% block content %}
-<h1>Create a group</h1>
-<form id="createGroupForm">
-    <div class="item-data">
-        <label for="name">Name</label>
-        <input type="text" id="groupName" />
-    </div>
-    <div class="item-data">
-        <label for="description">Description</label>
-        <textarea id="groupDescription"></textarea>
-    </div>
-    <button type="button" onclick="createGroup()">Crear Grupo</button>
-</form>
+{% extends "base.html" %} 
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/groups.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="create-group-container">
+    <h1>Create a group</h1>
+    <form id="createGroupForm">
+        <div class="item-data">
+            <label for="name">Name</label>
+            <input type="text" id="groupName" placeholder="Name" />
+        </div>
+        <div class="item-data">
+            <label for="description">Description</label>
+            <textarea id="groupDescription" placeholder="Descripcion del grupo..."></textarea>
+        </div>
+        <button type="button" onclick="createGroup()">Crear Grupo</button>
+    </form>
+</div>
 <script src="{{ url_for('static', filename='js/groups/create.js') }}"></script>
 {% endblock %}

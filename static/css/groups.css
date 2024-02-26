@@ -80,3 +80,214 @@ a {
 a:hover {
     text-decoration: underline;
 }
+
+.container-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.container-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: start;
+    margin-bottom: 20px;
+}
+
+.container-header h1 {
+    color: mediumpurple;
+    margin: 0;
+}
+
+.container-header p {
+    color: mediumpurple;
+    text-decoration: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.container-header p:hover {
+    background-color: darken(mediumpurple, 10%);
+}
+
+.container-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.group-items {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.group-items .miembros {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.group-items .miembros h2 {
+    color: mediumpurple;
+    margin: 0;
+}
+
+.group-items .miembros ul {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    list-style-type: none;
+    padding: 0;
+}
+
+.group-items .miembros ul img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+/* for even image */
+.group-items .miembros ul img:nth-child(even) {
+    border: 2px dashed mediumpurple;
+}
+
+.group-items .miembros ul img:hover {
+    transform: scale(1.02);
+    transition: all 0.3s ease;
+}
+
+.group-items .miembros ul li {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.group-items .miembros ul li a {
+    color: black;
+    text-decoration: none;
+}
+
+.group-items .tareas {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.group-items .tareas h2 {
+    color: mediumpurple;
+    margin: 0;
+}
+
+.group-items .tareas ul {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    list-style-type: none;
+    padding: 0;
+}
+
+.group-items .tareas ul li {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+}
+
+.group-items .tareas ul li a {
+    color: black;
+    text-decoration: none;
+}
+
+.create-group-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.create-group-container h1 {
+    color: mediumpurple;
+}
+
+.create-group-container form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.create-group-container form .item-data {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;    
+}
+
+.create-group-container form .item-data label {
+    color: mediumpurple;
+}
+
+.create-group-container form .item-data input {
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.create-group-container form .item-data input:focus {
+    border: 1px solid mediumpurple;
+}
+
+.create-group-container form .item-data textarea {
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.create-group-container form .item-data textarea:focus {
+    border: 1px solid mediumpurple;
+}
+
+.create-group-container form button {
+    padding: 8px 15px;
+    border-radius: 5px;
+    background-color: mediumpurple;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.create-group-container form button:hover {
+    background-color: darken(mediumpurple, 10%);
+}

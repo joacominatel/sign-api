@@ -255,7 +255,16 @@ def groups():
         with get_db() as db:
             db.execute('SELECT * FROM groups WHERE owner_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
             groups = db.fetchall()
-        return render_template('groups/groups.html', groups=groups)
+            # total tasks of a group
+            total_tasks = []
+            total_members = []
+            for group in groups:
+                db.execute('SELECT COUNT(*) FROM tasks WHERE group_id = %s', (group[0],))
+                db.execute('SELECT COUNT(*) FROM group_members WHERE group_id = %s', (group[0],))
+                total_tasks.append(db.fetchone()[0])
+                total_members.append(db.fetchone()[0])
+
+        return render_template('groups/groups.html', groups=groups, total_tasks=total_tasks, total_members=total_members)
     else:
         return redirect('/denied')
 
@@ -293,6 +302,34 @@ def create_group():
 def create_group_form():
     return render_template('groups/create.html')
 
+@app.route('/groups/<int:group_id>', methods=['GET'])
+def group(group_id):
+    group = {}
+    if 'username' in session:
+        with get_db() as db:
+            db.execute('SELECT * FROM groups, group_members WHERE groups.id = group_members.group_id AND groups.id = %s AND group_members.user_id = (SELECT id FROM users WHERE username = %s)', (group_id, session['username']))
+            group = db.fetchone()
+            members = []
+            db.execute('SELECT username, profile_image_url FROM users, group_members WHERE users.id = group_members.user_id AND group_members.group_id = %s', (group_id,))
+            members = db.fetchall()
+            tasks = []
+            db.execute('SELECT * FROM tasks WHERE group_id = %s', (group_id,))
+            tasks = db.fetchall()
+
+        return render_template('groups/group.html', group=group, members=members, tasks=tasks)
+    else:
+        return redirect('/denied')
+
+@app.route('/groups/<int:group_id>/add_member', methods=['POST'])
+def add_member(group_id):
+    data = request.json
+    try:
+        with get_db() as db:
+            db.execute('INSERT INTO group_members (group_id, user_id) VALUES (%s, (SELECT id FROM users WHERE username = %s))', (group_id, data['username']))
+        return jsonify({'message': 'Member added'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Error adding member'})
 
 if __name__ == '__main__':
     app.run(debug=True, port=8001)

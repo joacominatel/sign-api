@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/groups.css') }}">
+{% endblock %}
+{% block content %}
+    <!-- mostrar miembros del grupo -->
+    <div class="container-group">
+        <div class="container-header">
+            <h1>{{ group[1] }}</h1>
+            <p>{{ group[2] }}</p>
+        </div>
+        <div class="container-body">
+            <div class="group-items">
+                <div class="miembros">
+                    <h2>Miembros</h2>
+                    <ul>
+                        {% for member in members %}
+                            <img src="{{ url_for('static', filename='img/uploads/' + member[1] ) }}" alt="{{ member[1] }}">
+                            <li>
+                                <a href="#">{{ member[0] }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="tareas">
+                    <h2>Tareas</h2>
+                    <ul>
+                        {% for task in tasks %}
+                            <li>Nombre: {{ task[2] }}</li>
+                            <li>Fecha: {{ task[4] }}</li>
+                            <li>Descripcion: {{ task[3] }}</li>
+                            <li>Estado: {{ task[5] }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

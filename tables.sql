@@ -51,3 +51,6 @@ CREATE TABLE group_members (
 );
 
 ALTER TABLE users ADD COLUMN profile_image_url TEXT;
+
+-- add column to table tasks for share tasks with groups
+ALTER TABLE tasks ADD COLUMN group_id INTEGER REFERENCES groups(id);

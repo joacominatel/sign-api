@@ -25,15 +25,19 @@
                     <div class="group-card-body">
                         <div class="task-counter">
                             <h2>Tareas asignadas</h2>
-                            <p><span>5</span></p>
+                            <p><span>
+                                {{ total_tasks[0] }}
+                            </span></p>
                         </div>
                         <div class="group-members">
                             <h2>Miembros</h2>
-                            <p><span>12</span></p>
+                            <p><span>
+                                {{ total_members }}
+                            </span></p>
                         </div>
                     </div>
                     <div class="group-card-funcs">
-                        <a href="#">Ver grupo</a>
+                        <a href="{{ url_for('group', group_id=group[0]) }}">Ver grupo</a>
                         {% if group[3] == session['username'] %}
                             <a href="#">Eliminar grupo</a>
                         {% endif %}
