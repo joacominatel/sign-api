@@ -6,10 +6,10 @@
 {% block content %}
 <div class="containerProfile">
     <div class="profile-header">
-        <img src="{{ url_for('static', filename='img/uploads/' + user[2]) }}" alt="profile-image">
+        <img src="{{ url_for('static', filename='img/default-user.webp') }}" alt="profile-image">
         <div class="profile-name">
-            <h2>{{ user[1] }}</h2>
-            <p>{{ user[0] }}</p>
+            <h2>🤔</h2>
+            <p>x</p>
         </div>
     </div>
     <div class="profile-content">
@@ -18,11 +18,11 @@
             <div class="personal-data">
                 <div class="data">
                     <p>Correo: </p>
-                    <p>{{ user[4] }}</p>
+                    <p>not_found@error.com 😋</p>
                 </div>
                 <div class="data">
                     <p>Rol: </p>
-                    <p>{{ session['role'] }}</p>
+                    <p>🤔</p>
                 </div>
             </div>
         </section>
@@ -31,19 +31,19 @@
             <div class="statistics">
                 <div class="stat">
                     <p><strong>Tareas completadas:</strong></p>
-                    <p>{{ completed_tasks[0] }}</p>
+                    <p>x</p>
                 </div>
                 <div class="stat">
                     <p><strong>Tareas pendientes:</strong></p>
-                    <p>{{ pending_tasks[0] }}</p>
+                    <p>x</p>
                 </div>
                 <div class="stat">
                     <p><strong>Tareas totales creadas:</strong></p>
-                    <p>{{ total_tasks[0] }}</p>
+                    <p>x</p>
                 </div>
                 <div class="stat">
                     <p>Fecha de registro:</p>
-                    <p>{{ user[3] }}</p>
+                    <p>x</p>
                 </div>
             </div>
         </section>

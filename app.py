@@ -257,15 +257,20 @@ def groups():
         with get_db() as db:
             db.execute('SELECT * FROM groups, group_members WHERE groups.id = group_members.group_id AND group_members.user_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
             groups = db.fetchall()
-            total_tasks = []
-            db.execute('SELECT COUNT(*) FROM tasks WHERE group_id = %s', (groups[0][0],))
-            total_tasks = db.fetchone()
+
             total_members = []
-            db.execute('SELECT COUNT(*) FROM group_members WHERE group_id = %s', (groups[0][0],))
-            total_members = db.fetchone()
+            total_tasks = []
+            total_members = []
+
+            for group in groups:
+                db.execute('SELECT COUNT(*) FROM group_members WHERE group_id = %s', (group[0],))
+                total_members.append(db.fetchone()[0])
+                db.execute('SELECT COUNT(*) FROM tasks WHERE group_id = %s', (group[0],))
+                total_tasks.append(db.fetchone()[0])
+
             user_id = []
             db.execute('SELECT id FROM users WHERE username = %s', (session['username'],))
-            user_id = db.fetchone()
+            user_id = db.fetchone()[0]
 
         return render_template('groups/groups.html', groups=groups, total_tasks=total_tasks, total_members=total_members, user_id=user_id)
     else:
@@ -342,7 +347,11 @@ def delete_member(group_id):
     data = request.json
     try:
         with get_db() as db:
-            db.execute('DELETE FROM group_members WHERE group_id = %s AND user_id = (SELECT id FROM users WHERE username = %s)', (group_id, data['username']))
+            # get id of owner of the group
+            db.execute('SELECT owner_id FROM groups WHERE id = %s', (group_id,))
+            if data['memberId'] == db.fetchone()[0]:
+                return jsonify({'message': 'Error deleting member: owner of the group'})
+            db.execute('DELETE FROM group_members WHERE group_id = %s AND user_id = %s', (group_id, data['memberId']))
         return jsonify({'message': 'Member deleted'})
     except Exception as e:
         print(e)
@@ -391,6 +400,30 @@ def add_task_to_group(group_id):
     except Exception as e:
         print(e)
         return jsonify({'message': 'Error adding task to group'})
+    
+@app.route('/profile/<username>/', methods=['GET'])
+def profile(username):
+    if 'username' in session:
+        try:
+            with get_db() as db:
+                # get user id
+                db.execute('SELECT id FROM users WHERE username = %s', (username,))
+                user = db.fetchone()[0]
+                db.execute('SELECT COUNT(*) FROM tasks WHERE user_id = %s', (user,))
+                total_tasks = db.fetchone()
+                db.execute('SELECT COUNT(*) FROM tasks WHERE user_id = %s AND completed = TRUE', (user,))
+                completed_tasks = db.fetchone()
+                db.execute('SELECT COUNT(*) FROM tasks WHERE user_id = %s AND completed = FALSE', (user,))
+                pending_tasks = db.fetchone()
+                db.execute('SELECT username, name, profile_image_url, created_at, email FROM users WHERE id = %s', (user,))
+                user_data = db.fetchone()
+
+            return render_template('profile.html', title=f'Perfil de {session["username"]}', total_tasks=total_tasks, completed_tasks=completed_tasks, pending_tasks=pending_tasks, user=user_data)
+        except:
+            return render_template('errors/user_not_found.html', title='Usuario no encontrado')
+    else:
+        return redirect('/login')
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=8001)

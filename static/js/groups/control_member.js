@@ -71,6 +71,7 @@ function addMemberToGroup(username) {
         .then(function (response) {
             console.log(response);
             modal.style.display = "none";
+            window.location.reload();
         }
     )
     .catch(function (error) {
@@ -97,27 +98,23 @@ window.onclick = function(event) {
     }
 }
 
-function addTaskToGroup() {
-    // obtener id oculto en #taskId
-    let taskId = document.getElementById('taskId').value;
-
+function addTaskToGroup(taskId) {
     axios.post('/groups/' + GROUP_ID + '/add_task', { taskId: taskId })
         .then(function (response) {
             console.log(response);
             modalTask.style.display = "none";
+            window.location.reload();
         }
     )
 }
 
-function deleteMemberFromGroup() {
-    let username = document.getElementById('memberId').innerText;
-
-    axios.post('/groups/' + GROUP_ID + '/delete_member', { username: username })
+function deleteMemberFromGroup(memberId) {
+    axios.post('/groups/' + GROUP_ID + '/delete_member', { memberId: memberId })
         .then(function (response) {
-            console.log(response);
-        }
-    )
-    .catch(function (error) {
-        console.log(error);
-    });
+            alert(response.data.message);
+            window.location.reload();
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
 }

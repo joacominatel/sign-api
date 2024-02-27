@@ -14,8 +14,9 @@
             <p>
                 But you can create one <a href="{{ url_for('create_group') }}">here</a>
             </p>
-        {% endif %}
+        {% else %}
         <a href="{{ url_for('create_group') }}">Create group</a>
+        {% endif %}
         <ul>
             {% for group in groups %}
                 <div class="group-card">
@@ -39,7 +40,7 @@
                     </div>
                     <div class="group-card-funcs">
                         <a href="{{ url_for('group', group_id=group[0]) }}">Ver grupo</a>
-                        {% if group[3] == user_id[0] %}
+                        {% if group[3] == user_id %}
                             <a href="{{ url_for('edit_group', group_id=group[0]) }}">Editar grupo</a>
                         {% endif %}
                     </div>
