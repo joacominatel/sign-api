@@ -15,6 +15,7 @@
                 But you can create one <a href="{{ url_for('create_group') }}">here</a>
             </p>
         {% endif %}
+        <a href="{{ url_for('create_group') }}">Create group</a>
         <ul>
             {% for group in groups %}
                 <div class="group-card">
@@ -26,20 +27,20 @@
                         <div class="task-counter">
                             <h2>Tareas asignadas</h2>
                             <p><span>
-                                {{ total_tasks[0] }}
+                                {{ total_tasks[loop.index0] }}
                             </span></p>
                         </div>
                         <div class="group-members">
                             <h2>Miembros</h2>
                             <p><span>
-                                {{ total_members[0] }}
+                                {{ total_members[loop.index0] }}
                             </span></p>
                         </div>
                     </div>
                     <div class="group-card-funcs">
                         <a href="{{ url_for('group', group_id=group[0]) }}">Ver grupo</a>
-                        {% if group[3] == session['username'] %}
-                            <a href="#">Eliminar grupo</a>
+                        {% if group[3] == user_id[0] %}
+                            <a href="{{ url_for('edit_group', group_id=group[0]) }}">Editar grupo</a>
                         {% endif %}
                     </div>
                 </div>

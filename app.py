@@ -1,5 +1,5 @@
 import flask, psycopg2, os
-from flask import jsonify, request, render_template, redirect, url_for, session
+from flask import jsonify, request, render_template, redirect, session
 from contextlib import contextmanager
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
@@ -53,7 +53,7 @@ def home():
 def get_tasks():
     # get tasks from the db of user in session searching by id
     with get_db() as db:
-        db.execute('SELECT * FROM tasks WHERE user_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
+        db.execute('SELECT * FROM tasks WHERE user_id = (SELECT id FROM users WHERE username = %s ORDER BY priority)', (session['username'],))
         tasks = db.fetchall()
     return tasks
 
@@ -87,9 +87,9 @@ def add_task():
     try:
         with get_db() as db:
             if data['dueDate']:
-                db.execute('INSERT INTO tasks (user_id, title, description, due_date) VALUES ((SELECT id FROM users WHERE username = %s), %s, %s, %s)', (session['username'], data['title'], data['description'], data['dueDate']))
+                db.execute('INSERT INTO tasks (user_id, title, description, due_date, priority) VALUES ((SELECT id FROM users WHERE username = %s), %s, %s, %s, %s)', (session['username'], data['title'], data['description'], data['dueDate'], data['priority']))
             else:
-                db.execute('INSERT INTO tasks (user_id, title, description) VALUES ((SELECT id FROM users WHERE username = %s), %s, %s)', (session['username'], data['title'], data['description']))
+                db.execute('INSERT INTO tasks (user_id, title, description, priority) VALUES ((SELECT id FROM users WHERE username = %s), %s, %s, %s)', (session['username'], data['title'], data['description'], data['priority']))
 
         return jsonify({'message': 'Task added'})
     except Exception as e:
@@ -187,15 +187,10 @@ def update_user():
         return redirect('/denied')
     
     data = request.json
-    print(data)
+
     try:
         with get_db() as db:
-            if data['name'] and data['email']:
-                db.execute('UPDATE users SET name = %s, email = %s WHERE username = %s', (data['name'], data['email'], session['username']))
-            elif data['name']:
-                db.execute('UPDATE users SET name = %s WHERE username = %s', (data['name'], session['username']))
-            elif data['email']:
-                db.execute('UPDATE users SET email = %s WHERE username = %s', (data['email'], session['username']))
+            db.execute('UPDATE users SET name = %s, email = %s, updated_at = CURRENT_TIMESTAMP WHERE username = %s', (data['name'], data['email'], session['username']))
         session['name'] = data['name']
         session['email'] = data['email']
         return jsonify({'message': 'User updated'})
@@ -260,19 +255,26 @@ def groups():
             # total tasks of a group
             total_tasks = []
             total_members = []
+            user_id = []
+
+            # get total tasks and total members of each group
             for group in groups:
                 db.execute('SELECT COUNT(*) FROM tasks WHERE group_id = %s', (group[0],))
                 total_tasks.append(db.fetchone()[0])
+                
                 db.execute('SELECT COUNT(*) FROM group_members WHERE group_id = %s', (group[0],))
                 total_members.append(db.fetchone()[0])
 
-        return render_template('groups/groups.html', groups=groups, total_tasks=total_tasks, total_members=total_members)
+                db.execute('SELECT id FROM users WHERE username = %s', (session['username'],))
+                user_id.append(db.fetchone()[0])
+
+        return render_template('groups/groups.html', groups=groups, total_tasks=total_tasks, total_members=total_members, user_id=user_id)
     else:
         return redirect('/denied')
-
     
 @app.route('/groups/create', methods=['POST'])
 def create_group():
+
     """
     CREATE TABLE groups (
     id SERIAL PRIMARY KEY,
@@ -332,6 +334,38 @@ def add_member(group_id):
     except Exception as e:
         print(e)
         return jsonify({'message': 'Error adding member'})
+    
+@app.route('/search_users', methods=['GET'])
+def search_users():
+    username_query = request.args.get('username', '')
+    group_id = request.args.get('group_id', None)
+    users = []
+    if 'username' in session:
+        with get_db() as db:
+            # Modifica esta consulta para que también verifique si el usuario ya es miembro del grupo
+            query = """
+            SELECT users.username, users.profile_image_url, 
+                   CASE WHEN group_members.user_id IS NULL THEN FALSE ELSE TRUE END as is_member
+            FROM users
+            LEFT JOIN group_members ON users.id = group_members.user_id AND group_members.group_id = %s
+            WHERE users.username ILIKE %s AND users.username != %s
+            """
+            db.execute(query, (group_id, f'%{username_query}%', session['username']))
+            users = db.fetchall()
+        return jsonify(users)
+    else:
+        return redirect('/denied')
+    
+@app.route('/groups/<int:group_id>/edit_group', methods=['POST'])
+def edit_group(group_id):
+    data = request.json
+    try:
+        with get_db() as db:
+            db.execute('UPDATE groups SET name = %s, description = %s WHERE id = %s', (data['name'], data['description'], group_id))
+        return jsonify({'message': 'Group updated'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Error updating group'})
 
 if __name__ == '__main__':
     app.run(debug=True, port=8001)

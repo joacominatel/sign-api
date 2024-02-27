@@ -1,6 +1,3 @@
-// import toastNoti.js
-import { showNotification } from "./toastNoti.js";
-
 let changeThemeButton = document.getElementById("change-theme");
 
 changeThemeButton.addEventListener("click", function (event) {
@@ -73,12 +70,14 @@ function createTaskForm(event) {
   const title = document.getElementById("task-name").value;
   const description = document.getElementById("task-description").value;
   const dueDate = document.getElementById("task-date").value;
+  const priority = document.getElementById("task-priority").value;
 
   axios
     .post("/add_task", {
       title: title,
       description: description,
       dueDate: dueDate,
+      priority: priority,
     })
     .then(function (response) {
       console.log("Task created");
@@ -102,3 +101,18 @@ function showCompletedTasks() {
     task.classList.toggle("completed-filter");
   });
 }
+
+let lastScrollTop = 0;
+const navbar = document.getElementById("navbar");
+
+window.addEventListener("scroll", function() {
+  let scrollTop = window.scrollY || document.documentElement.scrollTop;
+  if (scrollTop > lastScrollTop) {
+      // Scroll hacia abajo
+      navbar.style.top = "-100px"; // Ocultar el navbar
+  } else {
+      // Scroll hacia arriba
+      navbar.style.top = "0"; // Mostrar el navbar
+  }
+  lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
+});

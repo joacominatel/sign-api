@@ -20,7 +20,7 @@
     {% block head %}{% endblock %}
 </head>
 <body>
-    <header>
+    <header id="navbar">
         <nav>
             <ul>
                 <i class="fas fa-moon" id="change-theme"></i>
@@ -91,6 +91,15 @@
                 <label for="task-date">Fecha de entrega</label>
                 <input type="date" id="task-date" name="task-date" required>
               </div>
+              <!-- choice priority -->
+                <div class="form-group">
+                    <label for="task-priority">Prioridad</label>
+                    <select id="task-priority" name="task-priority" required>
+                        <option value="1">Baja</option>
+                        <option value="2">Media</option>
+                        <option value="3">Alta</option>
+                    </select>
+                </div>
               <div class="form-group">
                 <button type="submit">Crear tarea</button>
               </div>

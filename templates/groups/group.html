@@ -12,12 +12,25 @@
         <div class="container-body">
             <div class="group-items">
                 <div class="miembros">
-                    <h2>Miembros</h2>
+                    <div class="top-card">
+                        <h2>Miembros</h2>
+                        <button id="add-member-btn">
+                            <i class="fas fa-user-plus"></i>
+                        </button>
+                        <!-- modal deployed by button to search an user and add a member -->
+                        <div id="addMemberModal" class="addMemberModal">
+                            <div class="modal-content">
+                                <span id="closeMemberModal">&times;</span>
+                                <input type="text" id="userSearchInput" placeholder="Buscar usuario...">
+                                <div id="userSearchResults"></div>
+                            </div>
+                        </div>
+                    </div>
                     <ul>
                         {% for member in members %}
-                            <img src="{{ url_for('static', filename='img/uploads/' + member[1] ) }}" alt="{{ member[1] }}">
-                            <li>
-                                <a href="#">{{ member[0] }}</a>
+                            <li onclick=" location.href='#' ">
+                                <img src="{{ url_for('static', filename='img/uploads/' + member[1] ) }}" alt="{{ member[1] }}">
+                                <p>{{ member[0] }}</p>
                             </li>
                         {% endfor %}
                     </ul>
@@ -39,4 +52,7 @@
             </div>
         </div>
     </div>
+{% endblock %}
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/groups/add_member.js') }}"></script>
 {% endblock %}

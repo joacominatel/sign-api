@@ -144,19 +144,42 @@ a:hover {
     gap: 20px;
 }
 
-.group-items .miembros h2 {
+.group-items .miembros .top-card {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 20px;
+}
+
+.group-items .miembros .top-card h2 {
     color: mediumpurple;
     margin: 0;
 }
 
+.group-items .miembros .top-card button {
+    padding: 8px 15px;
+    border-radius: 5px;
+    background-color: mediumpurple;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.group-items .miembros .top-card button:hover {
+    background-color: darken(mediumpurple, 10%);
+}
+
 .group-items .miembros ul {
-    display: flex;
-    flex-direction: row;
+    /* two columns */
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 0;
+    list-style-type: none;
     justify-content: center;
     align-items: center;
-    gap: 5px;
-    list-style-type: none;
-    padding: 0;
 }
 
 .group-items .miembros ul img {
@@ -181,9 +204,16 @@ a:hover {
     justify-content: center;
     align-items: center;
     gap: 5px;
+    padding: 6px;
+    border-radius: 5px;
 }
 
-.group-items .miembros ul li a {
+.group-items .miembros ul li:hover {
+    background-color: #e6e6e6;
+    cursor: pointer;
+}
+
+.group-items .miembros ul li p {
     color: black;
     text-decoration: none;
 }
@@ -290,4 +320,81 @@ a:hover {
 
 .create-group-container form button:hover {
     background-color: darken(mediumpurple, 10%);
+}
+
+.addMemberModal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgb(0, 0, 0);
+    background-color: rgba(0, 0, 0, 0.4);
+    animation: fadeIn 0.4s;
+}
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+#closeMemberModal {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+#closeMemberModal:hover,
+#closeMemberModal:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+#userSearchInput {
+    width: 100%;
+    padding: 12px 20px;
+    margin: 8px 0;
+    display: inline-block;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+#userSearchResults {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+#userSearchResults img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.user-search-result {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.3s ease;
+    padding: 8px 15px;
+}
+
+.user-search-result:hover {
+    background-color: #e6e6e6;
+    cursor: pointer;
 }

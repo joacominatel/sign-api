@@ -77,39 +77,38 @@
   });
 })();
 
-document.addEventListener("DOMContentLoaded", function () {
-  const originalData = {
-    email: document.getElementById("email").value,
-    name: document.getElementById("name").value,
-  };
-
-  document
-    .getElementById("modifyProfileButton")
-    .addEventListener("click", function (event) {
+window.onload = function() {
+  document.getElementById('modifyProfileButton').addEventListener('click', function(event) {
       event.preventDefault();
-
-      const modifiedData = {};
-      const email = document.getElementById("email").value;
-      const name = document.getElementById("name").value;
-
-      if (email !== originalData.email) modifiedData.email = email;
-      if (name !== originalData.name) modifiedData.name = name;
-
-      if (Object.keys(modifiedData).length > 0) {
-        axios
-          .post("/user/update", modifiedData)
-          .then(function (response) {
-            console.log("Success:", response.data);
-          })
-          .catch(function (error) {
-            console.error("Error:", error);
-            // Maneja el error aquí
-          });
-      } else {
-        console.log("No hay cambios para enviar.");
-      }
-    });
-});
+      
+      // obtiene los valores del formulario
+      var username = document.getElementById('username').value;
+      var email = document.getElementById('email').value;
+      var name = document.getElementById('name').value;
+      
+      // Axios para enviar los datos
+      axios.post('/user/update', {
+          username: username, // aunque username está deshabilitado, lo incluimos por completitud
+          email: email,
+          name: name
+      })
+      .then(function(response) {
+          // if status text is OK, then the profile was updated
+          if (response.statusText == "OK") {
+              alert('Perfil modificado');
+              setTimeout(function() {
+                  window.location.reload();
+              }, 1000);
+          } else {
+              alert('Error al modificar el perfil');
+          }
+      })
+      .catch(function(error) {
+          console.log(error);
+          alert('Error al modificar el perfil');
+      });
+  });
+};
 
 // logica de imagen modal
 const image = document.getElementById("profile-img");

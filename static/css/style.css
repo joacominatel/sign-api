@@ -510,7 +510,7 @@ section#main aside .last-tasks-resume .no-task-completed button:focus {
 
 .modal-create-task .modal-content h2 {
     font-size: 1.5em;
-    font-weight: 700;
+    font-weight: 500;
 }
 
 .modal-create-task .modal-content form {
@@ -535,8 +535,8 @@ section#main aside .last-tasks-resume .no-task-completed button:focus {
     border: none;
     border-radius: 10px;
     background-color: #f5f5f5;
-    font-size: 1.2em;
-    font-weight: 700;
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 .modal-create-task .modal-content form .form-group textarea {
@@ -545,7 +545,21 @@ section#main aside .last-tasks-resume .no-task-completed button:focus {
     border-radius: 10px;
     background-color: #f5f5f5;
     font-size: 1.2em;
-    font-weight: 700;
+    font-weight: 500;
+}
+
+.modal-create-task .modal-content form .form-group select {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background-color: #f5f5f5;
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+.modal-create-task .modal-content form .form-group select option {
+    font-size: 1rem;
+    font-weight: 500;
 }
 
 .modal-create-task .modal-content form .form-group input:focus {

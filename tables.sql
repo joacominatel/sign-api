@@ -82,5 +82,3 @@ ALTER TABLE users DROP COLUMN role;
 
 INSERT INTO user_roles (user_id, role_id)
 VALUES ((SELECT id FROM users WHERE username = 'joacominatel'), (SELECT id FROM roles WHERE name = 'admin'));
-
-ALTER TABLE tasks ADD COLUMN group_id INTEGER REFERENCES groups(id);
