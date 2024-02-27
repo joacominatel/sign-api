@@ -77,3 +77,47 @@ function addMemberToGroup(username) {
         console.log(error);
     });
 }
+
+
+const btnOpenModalTask = document.getElementById('add-task-btn');
+const modalTask = document.getElementById('addTaskModal');
+const closeModalTask = document.getElementById('closeTaskModal');
+
+btnOpenModalTask.onclick = function() {
+    modalTask.style.display = "block";
+}
+
+closeModalTask.onclick = function() {
+    modalTask.style.display = "none";
+}
+
+window.onclick = function(event) {
+    if (event.target == modalTask) {
+        modalTask.style.display = "none";
+    }
+}
+
+function addTaskToGroup() {
+    // obtener id oculto en #taskId
+    let taskId = document.getElementById('taskId').value;
+
+    axios.post('/groups/' + GROUP_ID + '/add_task', { taskId: taskId })
+        .then(function (response) {
+            console.log(response);
+            modalTask.style.display = "none";
+        }
+    )
+}
+
+function deleteMemberFromGroup() {
+    let username = document.getElementById('memberId').innerText;
+
+    axios.post('/groups/' + GROUP_ID + '/delete_member', { username: username })
+        .then(function (response) {
+            console.log(response);
+        }
+    )
+    .catch(function (error) {
+        console.log(error);
+    });
+}

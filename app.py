@@ -132,10 +132,9 @@ def register_form():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
-
     try:
         with get_db() as db:
-            db.execute('SELECT username FROM users WHERE username = %s AND password = %s OR email = %s AND password = %s', (data['username'], data['password'], data['username'], data['password']))
+            db.execute('SELECT username FROM users WHERE username = %s AND password = %s', (data['username'], data['password']))
             user = db.fetchone()
         if user:
             session['username'] = data['username']
@@ -155,7 +154,7 @@ def login():
                     'email': data[5],
                     'role': role[0]
                 }
-                
+
                 session['username'] = data[0]
                 session['name'] = data[1]
                 session['profile_image_url'] = data[2]
@@ -178,6 +177,12 @@ def login_form():
 @app.route('/logout', methods=['GET'])
 def logout():
     session.pop('username', None)
+    session.pop('name', None)
+    session.pop('email', None)
+    session.pop('profile_image_url', None)
+    session.pop('created_at', None)
+    session.pop('updated_at', None)
+    session.pop('role', None)
     return redirect('/')
 
 @app.route('/user/update', methods=['POST'])
@@ -250,23 +255,17 @@ def groups():
     groups = []
     if 'username' in session:
         with get_db() as db:
-            db.execute('SELECT * FROM groups WHERE owner_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
+            db.execute('SELECT * FROM groups, group_members WHERE groups.id = group_members.group_id AND group_members.user_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
             groups = db.fetchall()
-            # total tasks of a group
             total_tasks = []
+            db.execute('SELECT COUNT(*) FROM tasks WHERE group_id = %s', (groups[0][0],))
+            total_tasks = db.fetchone()
             total_members = []
+            db.execute('SELECT COUNT(*) FROM group_members WHERE group_id = %s', (groups[0][0],))
+            total_members = db.fetchone()
             user_id = []
-
-            # get total tasks and total members of each group
-            for group in groups:
-                db.execute('SELECT COUNT(*) FROM tasks WHERE group_id = %s', (group[0],))
-                total_tasks.append(db.fetchone()[0])
-                
-                db.execute('SELECT COUNT(*) FROM group_members WHERE group_id = %s', (group[0],))
-                total_members.append(db.fetchone()[0])
-
-                db.execute('SELECT id FROM users WHERE username = %s', (session['username'],))
-                user_id.append(db.fetchone()[0])
+            db.execute('SELECT id FROM users WHERE username = %s', (session['username'],))
+            user_id = db.fetchone()
 
         return render_template('groups/groups.html', groups=groups, total_tasks=total_tasks, total_members=total_members, user_id=user_id)
     else:
@@ -314,13 +313,16 @@ def group(group_id):
             db.execute('SELECT * FROM groups, group_members WHERE groups.id = group_members.group_id AND groups.id = %s AND group_members.user_id = (SELECT id FROM users WHERE username = %s)', (group_id, session['username']))
             group = db.fetchone()
             members = []
-            db.execute('SELECT username, profile_image_url FROM users, group_members WHERE users.id = group_members.user_id AND group_members.group_id = %s', (group_id,))
+            db.execute('SELECT id, username, profile_image_url FROM users, group_members WHERE users.id = group_members.user_id AND group_members.group_id = %s', (group_id,))
             members = db.fetchall()
             tasks = []
             db.execute('SELECT * FROM tasks WHERE group_id = %s', (group_id,))
             tasks = db.fetchall()
+            user_tasks = []
+            db.execute('SELECT * FROM tasks WHERE user_id = (SELECT id FROM users WHERE username = %s) AND group_id <> %s;', (format(session['username']), group_id))
+            user_tasks = db.fetchall()
 
-        return render_template('groups/group.html', group=group, members=members, tasks=tasks)
+        return render_template('groups/group.html', group=group, members=members, tasks=tasks, user_tasks=user_tasks)
     else:
         return redirect('/denied')
 
@@ -334,6 +336,17 @@ def add_member(group_id):
     except Exception as e:
         print(e)
         return jsonify({'message': 'Error adding member'})
+    
+@app.route('/groups/<int:group_id>/delete_member', methods=['POST'])
+def delete_member(group_id):
+    data = request.json
+    try:
+        with get_db() as db:
+            db.execute('DELETE FROM group_members WHERE group_id = %s AND user_id = (SELECT id FROM users WHERE username = %s)', (group_id, data['username']))
+        return jsonify({'message': 'Member deleted'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Error deleting member'})
     
 @app.route('/search_users', methods=['GET'])
 def search_users():
@@ -366,6 +379,18 @@ def edit_group(group_id):
     except Exception as e:
         print(e)
         return jsonify({'message': 'Error updating group'})
+
+@app.route('/groups/<int:group_id>/add_task', methods=['POST'])
+def add_task_to_group(group_id):
+    # receive task.id, change group_id on that task to group_id
+    data = request.json
+    try:
+        with get_db() as db:
+            db.execute('UPDATE tasks SET group_id = %s WHERE id = %s', (group_id, data['taskId']))
+        return jsonify({'message': 'Task added to group'})
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Error adding task to group'})
 
 if __name__ == '__main__':
     app.run(debug=True, port=8001)

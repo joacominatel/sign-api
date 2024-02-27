@@ -68,8 +68,9 @@ SELECT
 
 
 -- Inser user admin
-INSERT INTO users (username, password, name, email, role)
-VALUES ('admin', 'admin', 'Admin', 'admin@admin.com', 'admin');
+INSERT INTO users (username, password, name, email, profile_image_url)
+VALUES ('admin', 'admin', 'Admin', 'admin@admin.com' ,'../default-user.webp');
+
 
 ALTER TABLE tasks
 ADD COLUMN priority INTEGER DEFAULT 0;
@@ -82,3 +83,11 @@ ALTER TABLE users DROP COLUMN role;
 
 INSERT INTO user_roles (user_id, role_id)
 VALUES ((SELECT id FROM users WHERE username = 'joacominatel'), (SELECT id FROM roles WHERE name = 'admin'));
+
+-- create group for Not assigned tasks
+INSERT INTO groups (name, description, owner_id)
+VALUES ('Not assigned', 'Group for not assigned tasks', (SELECT id FROM users WHERE username = 'admin'));
+
+-- assign all tasks to group Not assigned
+UPDATE tasks
+SET group_id = (SELECT id FROM groups WHERE name = 'Not assigned');

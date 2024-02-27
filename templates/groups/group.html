@@ -29,23 +29,76 @@
                     <ul>
                         {% for member in members %}
                             <li onclick=" location.href='#' ">
-                                <img src="{{ url_for('static', filename='img/uploads/' + member[1] ) }}" alt="{{ member[1] }}">
-                                <p>{{ member[0] }}</p>
+                                <!-- button for delete -->
+                                <div class="top-right-image-button">
+                                    <button onclick="deleteMemberFromGroup()">
+                                        <i class="fas fa-user-minus"></i>
+                                    </button>
+                                </div>
+                                <img src="{{ url_for('static', filename='img/uploads/' + member[2] ) }}" alt="{{ member[1] }}">
+                                <p>{{ member[1] }}</p>
+                                <p id="memberId {{ member[0] }}">{{ member[0] }}</p>
                             </li>
                         {% endfor %}
                     </ul>
                 </div>
                 <div class="tareas">
-                    <h2>Tareas</h2>
+                    <div class="top-card">
+                        <h2>Tareas</h2>
+                        <button id="add-task-btn">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <!-- modal deployed by button to sync task with group -->
+                        <div id="addTaskModal">
+                            <!-- show user tasks -->
+                            <div class="modal-content" id="tasksModal">
+                                <div class="close-btn">
+                                    <span id="closeTaskModal">&times;</span>
+                                </div>
+                                <div class="tasks-list">
+                                    {% if user_tasks == [] %}
+                                        <h3>Debes tener tareas creadas para agregar una al grupo 😛</h3>
+                                    {% endif %}
+                                    {% for task in user_tasks %}
+                                        <div class="task-item">
+                                            <!-- hidden id  -->
+                                            <input type="hidden" id="taskId" value="{{ task[0] }}">
+                                            <h3>{{ task[2] }}</h3>
+                                            <p>{{ task[3] }}</p>
+                                            <button onclick="addTaskToGroup()">Agregar</button>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <ul>
                         {% if tasks == [] %}
                             <li>No hay tareas</li>
                         {% endif %}
                         {% for task in tasks %}
-                            <li>Nombre: {{ task[2] }}</li>
-                            <li>Fecha: {{ task[4] }}</li>
-                            <li>Descripcion: {{ task[3] }}</li>
-                            <li>Estado: {{ task[5] }}</li>
+                        <div class="task-info">
+                            <aside class="left">
+                                <li>
+                                    <h2>Titulo: {{ task[2] }}</h2>
+                                </li>
+                                <li>
+                                    <p>Descripcion: {{ task[3] }}</p>
+                                </li>
+                            </aside>
+                            <aside class="right">
+                                <li class="fecha">
+                                    <h3>Fecha: {{ task[4] }}</h3>
+                                </li>
+                                <li>
+                                {% if task[5] == 0 %}
+                                    <p>Estado: Pendiente</p>
+                                {% else %}
+                                    <p>Estado: Completada</p>
+                                {% endif %}
+                                </li>
+                            </aside>
+                        </div>
                         {% endfor %}
                     </ul>
                 </div>
@@ -54,5 +107,5 @@
     </div>
 {% endblock %}
 {% block scripts %}
-    <script src="{{ url_for('static', filename='js/groups/add_member.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/groups/control_member.js') }}"></script>
 {% endblock %}
