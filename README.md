@@ -8,7 +8,9 @@ El proyecto se trataba de una simple "to-do list" pero completo. Es decir, siste
 *Como usar?*
 
 📌 Primero se deben descargar las dependencias del `requirements.txt` con el comando:
+
 *Windows:* `pip install -r ./requirements.txt`
+
 *Linux/Mac*: `pip3 install -r ./requirements.txt`
 
 📌 Se debe crear un archivo `.env` en la raiz del proyecto. Este es el encargado de guardar ciertos datos "privados/vulnerables". Debe quedar algo asi:
@@ -29,3 +31,4 @@ UPLOAD_FOLDER = 'static/img/uploads'
 📌 Ahora queda crear las tablas SQL. Estas estan guardadas en el archivo  `./tables.sql`.
 
 📌 Una vez creadas ya se puede iniciar la aplicacion el archivo `app.py`
+

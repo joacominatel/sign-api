@@ -375,21 +375,37 @@ def delete_member(group_id):
 @app.route('/search_users', methods=['GET'])
 def search_users():
     username_query = request.args.get('username', '')
-    group_id = request.args.get('group_id', None)
+    try:
+        group_id = request.args.get('group_id', None)
+    except:
+        group_id = None
     users = []
     if 'username' in session:
         with get_db() as db:
             # Modifica esta consulta para que también verifique si el usuario ya es miembro del grupo
-            query = """
+            if group_id:
+                query = """
             SELECT users.username, users.profile_image_url, 
                    CASE WHEN group_members.user_id IS NULL THEN FALSE ELSE TRUE END as is_member
             FROM users
             LEFT JOIN group_members ON users.id = group_members.user_id AND group_members.group_id = %s
             WHERE users.username ILIKE %s AND users.username != %s
             """
-            db.execute(query, (group_id, f'%{username_query}%', session['username']))
-            users = db.fetchall()
-        return jsonify(users)
+                db.execute(query, (group_id, f'%{username_query}%', session['username']))
+                users = db.fetchall()
+                return jsonify(users)
+            else:
+                query = """
+            SELECT users.username, users.profile_image_url, 
+                   CASE WHEN group_members.user_id IS NULL THEN FALSE ELSE TRUE END as is_member
+            FROM users
+            LEFT JOIN group_members ON users.id = group_members.user_id
+            WHERE users.username ILIKE %s AND users.username != %s
+            LIMIT 5
+            """
+                db.execute(query, (f'%{username_query}%', session['username']))
+                users = db.fetchall()
+                return jsonify(users)
     else:
         return redirect('/errors/denied')
     

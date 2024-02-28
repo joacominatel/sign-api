@@ -73,3 +73,46 @@
     width: 1rem;
     height: 1rem;
    }   
+
+
+   #user-list {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.user-search-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #fff;
+    cursor: pointer;
+}
+
+.user-search-result img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.user-search-result h3 {
+    margin: 0;
+}
+
+.user-search-result p {
+    margin: 0;
+}
+
+.user-search-result:hover {
+    transition: all 0.3s ease;
+    background-color: #fff2f2;
+}
+
+.user-search-result:active {
+    transition: all 0.3s ease;
+    background-color: #fff2f2;
+}
