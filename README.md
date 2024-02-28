@@ -6,6 +6,7 @@ En este caso utilice Python con su framework de Flask, y PostgreSQL principalmen
 El proyecto se trataba de una simple "to-do list" pero completo. Es decir, sistema de usuarios, roles, administradores, grupos para compartir tareas, de esa forma practicaba la relacion entre los datos y las tablas.
 
 *Como usar?*
+
 📌 Primero se deben descargar las dependencias del `requirements.txt` con el comando:
 *Windows:* `pip install -r ./requirements.txt`
 *Linux/Mac*: `pip3 install -r ./requirements.txt`
