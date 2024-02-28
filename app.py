@@ -239,7 +239,22 @@ def dashboard():
             db.execute('SELECT roles.name FROM roles, user_roles WHERE roles.id = user_roles.role_id AND user_roles.user_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
             role = db.fetchone()
             if role[0] == 'admin':
-                return render_template('admin/dashboard.html', title='Dashboard')
+                # send last users to the dashboard
+                db.execute('SELECT username, name, profile_image_url, created_at, updated_at, email FROM users ORDER BY created_at DESC LIMIT 4')
+                recent_users = db.fetchall()
+
+                # get views of app stats
+                db.execute('SELECT COUNT(*) FROM users')
+                total_users = db.fetchone()
+                db.execute('SELECT COUNT(*) FROM tasks')
+                total_tasks = db.fetchone()
+                db.execute('SELECT COUNT(*) FROM groups')
+                total_groups = db.fetchone()
+                db.execute('SELECT COUNT(*) FROM roles')
+                total_roles = db.fetchone()
+                
+                # send all users
+                return render_template('admin/dashboard.html', title='Dashboard', users=recent_users, total_users=total_users, total_tasks=total_tasks, total_groups=total_groups, total_roles=total_roles)
             else:
                 return redirect('/errors/denied')
 
