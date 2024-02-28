@@ -101,7 +101,7 @@ def tasks():
     if 'username' in session:
         return render_template('tasks.html', tasks=get_tasks())
     else:
-        return redirect('/denied')
+        return redirect('/errors/denied')
 
 @app.route('/register', methods=['POST'])
 def register():
@@ -189,7 +189,7 @@ def logout():
 def update_user():
     # asegurar que el user este logueado
     if 'username' not in session:
-        return redirect('/denied')
+        return redirect('/errors/denied')
     
     data = request.json
 
@@ -218,7 +218,7 @@ def upload():
         else:
             return jsonify({'message': 'Invalid file'})
     else:
-        return redirect('/denied')
+        return redirect('/errors/denied')
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
@@ -227,9 +227,9 @@ def save_image_user_db(username, filename):
     with get_db() as db:
         db.execute('UPDATE users SET profile_image_url = %s WHERE username = %s', (filename, username))
 
-@app.route('/denied', methods=['GET'])
+@app.route('/errors/denied', methods=['GET'])
 def denied():
-    return render_template('denied.html', title='Acceso denegado')
+    return render_template('errors/denied.html', title='Acceso denegado')
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
@@ -241,14 +241,14 @@ def dashboard():
             if role[0] == 'admin':
                 return render_template('admin/dashboard.html', title='Dashboard')
             else:
-                return redirect('/denied')
+                return redirect('/errors/denied')
 
 @app.route('/config_user', methods=['GET'])
 def config_user():
     if 'username' in session:
         return render_template('config/config_user.html', title=f'Configuración de {session["username"]}')
     else:
-        return redirect('/denied')
+        return redirect('/errors/denied')
     
 @app.route('/groups', methods=['GET'])
 def groups():
@@ -274,7 +274,7 @@ def groups():
 
         return render_template('groups/groups.html', groups=groups, total_tasks=total_tasks, total_members=total_members, user_id=user_id)
     else:
-        return redirect('/denied')
+        return redirect('/errors/denied')
     
 @app.route('/groups/create', methods=['POST'])
 def create_group():
@@ -329,7 +329,7 @@ def group(group_id):
 
         return render_template('groups/group.html', group=group, members=members, tasks=tasks, user_tasks=user_tasks)
     else:
-        return redirect('/denied')
+        return redirect('/errors/denied')
 
 @app.route('/groups/<int:group_id>/add_member', methods=['POST'])
 def add_member(group_id):
@@ -376,7 +376,7 @@ def search_users():
             users = db.fetchall()
         return jsonify(users)
     else:
-        return redirect('/denied')
+        return redirect('/errors/denied')
     
 @app.route('/groups/<int:group_id>/edit_group', methods=['POST'])
 def edit_group(group_id):
