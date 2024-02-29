@@ -341,8 +341,16 @@ def group(group_id):
             user_tasks = []
             db.execute('SELECT * FROM tasks WHERE user_id = (SELECT id FROM users WHERE username = %s) AND group_id <> %s;', (format(session['username']), group_id))
             user_tasks = db.fetchall()
+            posts = []
+            db.execute('SELECT * FROM group_posts WHERE group_id = %s', (group_id,))
+            posts = db.fetchall()
+            upvotes = []
+            for post in posts:
+                db.execute('SELECT COUNT(*) FROM post_upvotes WHERE post_id = %s', (post[0],))
+                upvotes.append(db.fetchone()[0])
 
-        return render_template('groups/group.html', group=group, members=members, tasks=tasks, user_tasks=user_tasks)
+
+        return render_template('groups/group.html', group=group, members=members, tasks=tasks, user_tasks=user_tasks, posts=posts, upvotes=upvotes)
     else:
         return redirect('/errors/denied')
 
@@ -455,6 +463,54 @@ def profile(username):
     else:
         return redirect('/login')
 
+@app.route('/groups/<int:group_id>/posts', methods=['POST'])
+def add_post(group_id):
+    data = request.json
+
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}, 401)
+
+    try:
+        with get_db() as db:
+            db.execute(
+                '''
+                INSERT INTO group_posts (group_id, user_id, title, content, created_at, updated_at)
+                VALUES (%s, (SELECT id FROM users WHERE username = %s), %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                ''', (group_id, session['username'], data['title'], data['content'])
+            )
+            # insert into post_votes
+            db.execute(
+                '''
+                INSERT INTO post_upvotes (post_id, user_id)
+                VALUES ((SELECT id FROM group_posts WHERE title = %s), (SELECT id FROM users WHERE username = %s))
+                ''', (data['title'], session['username'])
+            )
+        return jsonify({'message': 'Post added'}, 200)
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Error adding post'}, 500)
+
+@app.route('/groups/posts/<int:post_id>/upvote', methods=['POST'])
+def upvote_post(post_id):
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}, 401)
+
+    try:
+        with get_db() as db:
+            db.execute(
+                '''
+                INSERT INTO post_upvotes (post_id, user_id)
+                VALUES (%s, (SELECT id FROM users WHERE username = %s))
+                ''', (post_id, session['username'])
+            )
+        return jsonify({'message': 'Post upvoted'}, 200)
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Error upvoting post'}, 500)
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('errors/404.html', title='Página no encontrada'), 404
 
 if __name__ == '__main__':
     app.run(debug=True, port=8001)

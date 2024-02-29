@@ -584,3 +584,147 @@ a:hover {
     padding: 12px;
     border-radius: 10px
 }
+
+.posts {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 24px;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.posts #create-post-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    justify-content: flex-start;
+    align-items: flex-start;
+    width: auto;
+
+}
+
+.posts #create-post-form .posts-item-data {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.posts-item-data label {
+    color: mediumpurple;
+    font-weight: 600;
+    margin: 0;
+}
+
+.posts-item-data input {
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.posts-item-data input:focus {
+    border: 1px solid mediumpurple;
+}
+
+.posts-item-data textarea {
+    padding: 8px 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    transition: all 0.3s ease;
+}
+
+.posts-item-data textarea:focus {
+    border: 1px solid mediumpurple;
+}
+
+.posts-item-data button {
+    padding: 8px 15px;
+    border-radius: 5px;
+    background-color: mediumpurple;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.posts-item-data button:hover {
+    background-color: darken(mediumpurple, 10%);
+}
+
+.posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.post-item {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 10px;
+    border-radius: 8px;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+    gap: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.post-item h3 {
+    color: mediumpurple;
+    margin: 0;
+}
+
+.post-item p {
+    color: #666;
+}
+
+.post-item .funcs {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.post-item .funcs .upvotes {
+    display: flex;
+    flex-direction: row;
+    gap: 5px;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.post-item .funcs .upvotes button {
+    padding: 8px 15px;
+    border-radius: 5px;
+    background-color: mediumpurple;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.post-item .funcs .upvotes button:hover {
+    background-color: darken(mediumpurple, 10%);
+}
+
+.post-item .funcs .upvotes button i {
+    color: white;
+}
+
+.post-item .funcs button.delete {
+    padding: 8px 15px;
+    border-radius: 5px;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.post-item .funcs button.delete:hover {
+    background-color: #ff3333;
+}
+

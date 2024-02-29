@@ -118,3 +118,31 @@ function deleteMemberFromGroup(memberId) {
             console.log(error);
         });
 }
+
+const formGroupPosts = document.getElementById('create-post-form');
+
+formGroupPosts.addEventListener('submit', function(e) {
+    e.preventDefault();
+    axios.post('/groups/' + GROUP_ID + '/posts', {
+        title: document.getElementById('post-title').value,
+        content: document.getElementById('post-content').value
+        })
+        .then(function (response) {
+            console.log(response);
+            window.location.reload();
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+})
+
+function upVotePost(postId) {
+    axios.post('/groups/posts/' + postId + '/upvote')
+        .then(function (response) {
+            console.log(response);
+            window.location.reload();
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+}

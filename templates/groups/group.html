@@ -112,8 +112,65 @@
           {% endfor %}
         </ul>
       </div>
+      <!-- posts -->
+      <div class="posts">
+        <div class="top-card">
+          <h2>Publicaciones</h2>
+        </div>
+        <form action="" id="create-post-form">
+          <div class="posts-item-data">
+            <label for="title"> Titulo
+            </label>
+            <input
+              type="text"
+              id="post-title"
+              name="title"
+              placeholder="Titulo"
+              required
+            />
+          </div>
+          <div class="posts-item-data">
+            <label for="content"> Contenido
+            </label>
+            <textarea
+              id="post-content"
+              name="content"
+              placeholder="Contenido"
+              required
+            ></textarea>
+          </div>
+          <div class="posts-item-data">
+            <button id="create-post-btn" type="submit">Crear</button>
+          </div>
+        </form>
+        <div class="posts-list">
+          {% if posts == [] %}
+          <div class="post-item">
+            <h3>No hay publicaciones</h3>
+          </div>
+          {% endif %} {% for post in posts %}
+          <div class="post-item">
+            <h3>{{ post[3] }}</h3>
+            <p>{{ post[4] }}</p>
+            <div class="funcs">
+              <div class="upvotes">
+                <button onclick="upVotePost({{ post[0] }})">
+                  <i class="fas fa-thumbs-up"></i>
+                </button>
+                <p>{{ upvotes[loop.index0] }}</p>
+              </div>
+                <button class="delete" onclick="">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+          </div>
+          {% endfor %}
+      </div>
     </div>
   </div>
+</div>
+<div class="modal-posts">
+  <!-- create a post in this group -->
 </div>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='js/groups/control_member.js') }}"></script>

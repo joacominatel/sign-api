@@ -59,6 +59,25 @@ FROM users u
 LEFT JOIN tasks t ON u.id = t.user_id
 GROUP BY u.id;
 
+-- Table for posting like 'tweets' on groups
+CREATE TABLE group_posts (
+  id SERIAL PRIMARY KEY,
+  group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (group_id) REFERENCES groups(id)
+);
+
+-- table for upvotes on posts
+CREATE TABLE post_upvotes (
+  post_id INTEGER NOT NULL REFERENCES group_posts(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  PRIMARY KEY (post_id, user_id)
+);
+
 -- add view for stats of complete app, count of users, tasks and groups
 CREATE OR REPLACE VIEW app_stats AS
 SELECT
@@ -71,23 +90,5 @@ SELECT
 INSERT INTO users (username, password, name, email, profile_image_url)
 VALUES ('admin', 'admin', 'Admin', 'admin@admin.com' ,'../default-user.webp');
 
-
-ALTER TABLE tasks
-ADD COLUMN priority INTEGER DEFAULT 0;
-
 INSERT INTO roles (name) VALUES ('user');
 INSERT INTO roles (name) VALUES ('admin');
-
--- remove column role from users
-ALTER TABLE users DROP COLUMN role;
-
-INSERT INTO user_roles (user_id, role_id)
-VALUES ((SELECT id FROM users WHERE username = 'joacominatel'), (SELECT id FROM roles WHERE name = 'admin'));
-
--- create group for Not assigned tasks
-INSERT INTO groups (name, description, owner_id)
-VALUES ('Not assigned', 'Group for not assigned tasks', (SELECT id FROM users WHERE username = 'admin'));
-
--- assign all tasks to group Not assigned
-UPDATE tasks
-SET group_id = (SELECT id FROM groups WHERE name = 'Not assigned');
