@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Edit Group{% endblock %}
+{% block content %}
+<div class="group-edit">
+    <h1>Edit Group</h1>
+      <p>
+        <strong>ID:</strong> {{ group_id }}
+      </p>
+</div>  
+  <style>
+    .group-edit {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+    }
+  </style>
+{% endblock %}

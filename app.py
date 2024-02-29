@@ -427,6 +427,10 @@ def edit_group(group_id):
     except Exception as e:
         print(e)
         return jsonify({'message': 'Error updating group'})
+    
+@app.route('/groups/<int:group_id>/edit_group', methods=['GET'])
+def edit_group_form(group_id):
+    return render_template('groups/edit_group.html', group_id=group_id)
 
 @app.route('/groups/<int:group_id>/add_task', methods=['POST'])
 def add_task_to_group(group_id):
