@@ -87,9 +87,9 @@ def add_task():
     try:
         with get_db() as db:
             if data['dueDate']:
-                db.execute('INSERT INTO tasks (user_id, title, description, due_date, priority) VALUES ((SELECT id FROM users WHERE username = %s), %s, %s, %s, %s)', (session['username'], data['title'], data['description'], data['dueDate'], data['priority']))
+                db.execute('INSERT INTO tasks (user_id, title, description, due_date, priority, group_id) VALUES ((SELECT id FROM users WHERE username = %s), %s, %s, %s, %s, %s)', (session['username'], data['title'], data['description'], data['dueDate'], data['priority'], 6))
             else:
-                db.execute('INSERT INTO tasks (user_id, title, description, priority) VALUES ((SELECT id FROM users WHERE username = %s), %s, %s, %s)', (session['username'], data['title'], data['description'], data['priority']))
+                db.execute('INSERT INTO tasks (user_id, title, description, priority, group_id) VALUES ((SELECT id FROM users WHERE username = %s), %s, %s, %s, %s)', (session['username'], data['title'], data['description'], data['priority'], 6))
 
         return jsonify({'message': 'Task added'})
     except Exception as e:
@@ -389,9 +389,9 @@ def search_users():
                    CASE WHEN group_members.user_id IS NULL THEN FALSE ELSE TRUE END as is_member
             FROM users
             LEFT JOIN group_members ON users.id = group_members.user_id AND group_members.group_id = %s
-            WHERE users.username ILIKE %s AND users.username != %s
+            WHERE users.username ILIKE %s AND users.username != %s AND users.id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)
             """
-                db.execute(query, (group_id, f'%{username_query}%', session['username']))
+                db.execute(query, (group_id, f'%{username_query}%', session['username'], group_id))
                 users = db.fetchall()
                 return jsonify(users)
             else:

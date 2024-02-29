@@ -3,8 +3,6 @@ document.getElementById('userSearchInput').addEventListener('input', function(e)
          .then(function (response) {
                 var users = response.data;
                 var usersList = document.getElementById('userSearchResults');
-                
-                console.log(users);
 
                 usersList.innerHTML = '';
                 users.forEach(function(user) {
@@ -27,4 +25,12 @@ document.getElementById('userSearchInput').addEventListener('input', function(e)
          .catch(function (error) {
              console.log(error);
          });
+});
+
+// when click on user search result, location.href to /profile/username
+document.getElementById('userSearchResults').addEventListener('click', function(e) {
+    if (e.target.className === 'user-search-result') {
+        var username = e.target.textContent;
+        location.href = '/profile/' + username;
+    }
 });

@@ -14,8 +14,7 @@ logoutButton.addEventListener("click", function () {
   window.location.href = "/logout";
 });
 
-function updateTaskCompletion(task) {
-  const taskId = task.getAttribute("data-id");
+function updateTaskCompletion(task, taskId) {
   const completed = task.checked;
 
   axios
