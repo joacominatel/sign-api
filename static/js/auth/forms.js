@@ -56,6 +56,7 @@ async function loginUser(e) {
     alert(
       `Logueado con el usuario ${response.data.username}!`
     );
+    window.location.href = "/";
   } catch (error) {
     console.error(error);
   } finally {
