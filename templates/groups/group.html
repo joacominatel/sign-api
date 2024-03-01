@@ -7,8 +7,8 @@
 <!-- mostrar miembros del grupo -->
 <div class="container-group">
   <div class="container-header">
-    <h1>{{ group[1] }}</h1>
-    <p>{{ group[2] }}</p>
+    <h1>{{ group.name }}</h1>
+    <p>{{ group.description }}</p>
   </div>
   <div class="container-body">
     <div class="group-items">
@@ -33,19 +33,19 @@
         <ul>
           {% for member in members %}
           <div class="top-right-image-button">
-            <button onclick="deleteMemberFromGroup({{ member[0] }})">
+            <button onclick="deleteMemberFromGroup({{ member.id }})">
               <i class="fas fa-user-minus"></i>
             </button>
           </div>
           <li
-            onclick=" location.href='{{ url_for('profile', username=member[1]) }}' "
+            onclick=" location.href='{{ url_for('profile', username=member.username) }}' "
           >
             <!-- button for delete -->
             <img
-              src="{{ url_for('static', filename='img/uploads/' + member[2] ) }}"
+              src="{{ url_for('static', filename='img/uploads/' + member.profile_image_url ) }}"
               alt="{{ member[1] }}"
             />
-            <p>{{ member[1] }}</p>
+            <p>{{ member.username }}</p>
           </li>
           {% endfor %}
         </ul>
@@ -64,6 +64,7 @@
                 <span id="closeTaskModal">&times;</span>
               </div>
               <div class="tasks-list">
+
                 {% if user_tasks == [] %}
                 <div class="task-item">
                   <h3>
@@ -72,9 +73,9 @@
                 </div>
                 {% endif %} {% for task in user_tasks %}
                 <div class="task-item">
-                  <h3>{{ task[2] }}</h3>
-                  <p>{{ task[3] }}</p>
-                  <button onclick="addTaskToGroup({{ task[0] }})">
+                  <h3>{{ task.title }}</h3>
+                  <p>{{ task.description }}</p>
+                  <button onclick="addTaskToGroup({{ task.id }})">
                     Agregar
                   </button>
                 </div>
@@ -90,18 +91,18 @@
           <div class="task-info">
             <aside class="left">
               <li>
-                <h2>Titulo: {{ task[2] }}</h2>
+                <h2>Titulo: {{ task.title }}</h2>
               </li>
               <li>
-                <p>Descripcion: {{ task[3] }}</p>
+                <p>Descripcion: {{ task.description }}</p>
               </li>
             </aside>
             <aside class="right">
               <li class="fecha">
-                <h3>Fecha: {{ task[4] }}</h3>
+                <h3>Fecha: {{ task.due_date }}</h3>
               </li>
               <li>
-                {% if task[5] == 0 %}
+                {% if task.completed == 'f' %}
                 <p>Estado: Pendiente</p>
                 {% else %}
                 <p>Estado: Completada</p>
@@ -150,14 +151,14 @@
           </div>
           {% endif %} {% for post in posts %}
           <div class="post-item">
-            <h3>{{ post[3] }}</h3>
-            <p>{{ post[4] }}</p>
+            <h3>{{ post.title }}</h3>
+            <p>{{ post.content }}</p>
             <div class="funcs">
               <div class="upvotes">
                 <button onclick="upVotePost({{ post[0] }})">
                   <i class="fas fa-thumbs-up"></i>
                 </button>
-                <p>{{ upvotes[loop.index0] }}</p>
+                <p>{{ upvotes[0] }}</p>
               </div>
                 <button class="delete" onclick="">
                   <i class="fas fa-trash-alt"></i>

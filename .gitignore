@@ -4,4 +4,8 @@
 .env
 pyvenv.cfg
 /scripts
-/static/img/uploads
+/static/img/uploads/*
+__pycache__/*
+*.pyc
+*.pyo
+*.pyd

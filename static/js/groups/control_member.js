@@ -47,15 +47,17 @@ document.getElementById('userSearchInput').addEventListener('input', function(e)
                     var userDiv = document.createElement('div');
                     userDiv.className = 'user-search-result';
 
+                    console.log(user.username);
+
                     // if user[1] is not null, then it means that the user have image
-                    if (user[1] != null) {
-                        userDiv.innerHTML = '<img src="/static/img/uploads/' + user[1] + '" width="50" height="50" style="border-radius: 50%;">' + user[0];
+                    if (user.profile_image_url != null) {
+                        userDiv.innerHTML = '<img src="/static/img/uploads/' + user.profile_image_url + '" width="50" height="50" style="border-radius: 50%;">' + user.username;
                     } else {
-                        userDiv.innerHTML = '<img src="/static/img/default-user.webp" width="50" height="50" style="border-radius: 50%;">' + user[0];
+                        userDiv.innerHTML = '<img src="/static/img/default-user.webp" width="50" height="50" style="border-radius: 50%;">' + user.username;
                     }
                     
                     userDiv.onclick = function() {
-                        addMemberToGroup(user[0]);
+                        addMemberToGroup(user.username);
                     }
                     usersList.appendChild(userDiv);
                 });

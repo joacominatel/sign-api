@@ -12,23 +12,24 @@ El proyecto se trataba de una simple "to-do list" pero completo. Es decir, siste
 *Windows:* `pip install -r ./requirements.txt`
 
 *Linux/Mac*: `pip3 install -r ./requirements.txt`
+En el caso de Mac/Linux, o al usar `pip3`, se debe instalar la libreria `psycopg2-binary`.
 
 📌 Se debe crear un archivo `.env` en la raiz del proyecto. Este es el encargado de guardar ciertos datos "privados/vulnerables". Debe quedar algo asi:
 
 .env:
 ```
-DB_NAME='taskapp'
-DB_USER='x'
-DB_PASS='x'
-DB_HOST='localhost'
-DB_PORT='5432'
-
 SECRET_KEY='secretKey_of_flask'
+
+SQLALCHEMY_DATABASE_URI='postgresql://USERNAME:PASSWORD@localhost/taskapp'
 
 UPLOAD_FOLDER = 'static/img/uploads'
 ```
 
-📌 Ahora queda crear las tablas SQL. Estas estan guardadas en el archivo  `./tables.sql`.
+En esta version se utiliza SQLAlchemy para ordenar las tablas y automatizar algunos procesos. Por ejemplo,
+la creacion de estas y la generacion de los dos roles principales (user, admin).
 
-📌 Una vez creadas ya se puede iniciar la aplicacion el archivo `app.py`
+Esta en la carpeta /backend donde podemos encontrar el archivo db.py que establece la conexion. Y dentro de /backend/models 
+estan todos los modelos de cada tabla, de esta forma se mantiene otro orden y se asegura que no haya errores al crear
+la base de datos.
 
+📌 Ejecutar el `app.py` estando dentro del entorno virtual.

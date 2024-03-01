@@ -24,6 +24,7 @@ function registerUser(e) {
     .post("/register", data)
     .then((res) => {
       alert("User registered");
+      window.location.href = "/";
     })
     .catch((err) => {
       console.log(err);
