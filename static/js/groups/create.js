@@ -8,7 +8,8 @@ function createGroup() {
     })
     .then(function (response) {
         console.log(response);
-        showNotification('Grupo creado exitosamente', 'success');
+        alert("Grupo creado correctamente.");
+        window.location.href = '/groups';
     })
     .catch(function (error) {
         console.log(error);

@@ -28,7 +28,7 @@
                 </span>
                 <div class="buttons-funcs">
                     <!-- input checkbox if completed -->
-                    <input class="task-checkbox" type="checkbox" {% if task.completed == 't' %}
+                    <input class="task-checkbox" type="checkbox" {% if task.completed == True %}
                     checked {% endif %} data-id="{{ task.id }}"
                     onchange="updateTaskCompletion(this)">
                     <div class="delete-button">

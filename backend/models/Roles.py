@@ -18,6 +18,8 @@ class Roles(db.Model):
             'admin': Roles(name='admin'),
             'user': Roles(name='user')
         }
-        for role in roles.values():
-            db.session.add(role)
+        # check if roles already exist
+        for role in roles:
+            if Roles.query.filter_by(name=role).first() is None:
+                db.session.add(roles[role])
         db.session.commit()

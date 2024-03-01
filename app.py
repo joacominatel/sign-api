@@ -1,9 +1,12 @@
+# GENERALES 
 import flask, os
 from flask import jsonify, request, render_template, redirect, session
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from datetime import datetime
+
+# MODELOS
 from backend.db import init_app, db
 from backend.models.User import User
 from backend.models.UserRoles import UserRoles
@@ -14,6 +17,7 @@ from backend.models.GroupMembers import GroupMembers
 from backend.models.GroupPosts import GroupPosts
 from backend.models.PostUpVotes import PostUpVotes
 
+# SQLALCHEMY
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql import func, exists, and_, or_
@@ -76,24 +80,40 @@ def get_tasks():
 def complete_task():
     data = request.json
     print(data)
+
+    if 'username' not in session:
+        return jsonify({'message': 'No user logged in'}), 401
+    
+    task = Task.query.get(data['taskId'])
+    print(task)
+    if not task:
+        return jsonify({'message': 'Task not found'}), 404
+    
     try:
-        db.execute('UPDATE tasks SET completed = %s WHERE id = %s', (data['completed'], data['taskId']))
-        return jsonify({'message': 'Task completed'})
-    
+        task.completed = data['completed']
+        db.session.commit()
+        return jsonify({'message': 'Task updated successfully'}), 200
     except Exception as e:
+        db.session.rollback()
         print(e)
-        return jsonify({'message': 'Error completing task'})
-    
+        return jsonify({'message': 'Error updating task'}), 500
+
 @app.route('/delete_task', methods=['POST'])
 def delete_task():
     data = request.json
 
+    task = Task.query.get(data['taskId'])
+    if not task:
+        return jsonify({'message': 'Task not found'}), 404
+    
     try:
-        db.execute('DELETE FROM tasks WHERE id = %s', (data['taskId'],))
-        return jsonify({'message': 'Task deleted'})
+        db.session.delete(task)
+        db.session.commit()
+        return jsonify({'message': 'Task deleted successfully'}), 200
     except Exception as e:
+        db.session.rollback()
         print(e)
-        return jsonify({'message': 'Error deleting task'})
+        return jsonify({'message': 'Error deleting task'}), 500
 
 @app.route('/add_task', methods=['POST'])
 def add_task():
@@ -634,6 +654,21 @@ def edit_group(group_id):
         db.session.rollback()
         print(e)
         return jsonify({'message': 'Error updating group'}), 500
+    
+@app.route('/groups/<int:group_id>/delete_group', methods=['POST'])
+def delete_group(group_id):
+    group = Group.query.get(group_id)
+    if not group:
+        return jsonify({'message': 'Group not found'}), 404
+    
+    try:
+        db.session.delete(group)
+        db.session.commit()
+        return jsonify({'message': 'Group deleted'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error deleting group'}), 500
 
 @app.route('/groups/<int:group_id>/add_task', methods=['POST'])
 def add_task_to_group(group_id):
@@ -737,7 +772,15 @@ def upvote_post(post_id):
 
 @app.errorhandler(404)
 def page_not_found(e):
-    return render_template('errors/404.html', title='Página no encontrada'), 404
+    return render_template('errors/404.html', page_title='Página no encontrada', content='La página que buscas no existe', error_number='404'), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('errors/404.html', page_title='Error interno', content='Ha ocurrido un error interno en el servidor', error_number='500'), 500
+
+@app.errorhandler(405)
+def method_not_allowed(e):
+    return render_template('errors/404.html', page_title='Método no permitido', content='El método que intentas usar no está permitido', error_number='405'), 405
 
 if __name__ == '__main__':
     app.run(debug=True, port=8001)

@@ -11,6 +11,10 @@ def init_app(app):
     
     with app.app_context():
         db.create_all()
+
+        from backend.models.Roles import Roles
+        Roles.insert_roles()
+
         db.session.commit()
         
     return db
