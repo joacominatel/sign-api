@@ -19,21 +19,20 @@
     <div class="last-tasks-resume">
       <h2>Últimas tareas creadas</h2>
       <ul id="task-list">
-        <!-- cheuqear si hay tareas -->
         {% if tasks %}
-            {% for task in tasks[:3] %}
+            {% for task in tasks %}
                 <li>
                 <span>
                     <i class="fas fa-tasks"></i>
-                    <a href="{{ url_for('login') }}">{{ task[2] }}</a>
+                    <a href="{{ url_for('login') }}">{{ task.title }}</a>
                 </span>
                 <div class="buttons-funcs">
                     <!-- input checkbox if completed -->
-                    <input class="task-checkbox" type="checkbox" {% if task[5] == 1 %}
-                    checked {% endif %} data-id="{{ task[0] }}"
+                    <input class="task-checkbox" type="checkbox" {% if task.completed == 't' %}
+                    checked {% endif %} data-id="{{ task.id }}"
                     onchange="updateTaskCompletion(this)">
                     <div class="delete-button">
-                        <button onclick="deleteTask(this)" data-id="{{ task[0] }}">
+                        <button onclick="deleteTask(this)" data-id="{{ task.id }}">
                         <i class="fas fa-trash-alt"></i>
                         </button>
                     </div>

@@ -90,5 +90,8 @@ SELECT
 INSERT INTO users (username, password, name, email, profile_image_url)
 VALUES ('admin', 'admin', 'Admin', 'admin@admin.com' ,'../default-user.webp');
 
-INSERT INTO roles (name) VALUES ('user');
 INSERT INTO roles (name) VALUES ('admin');
+INSERT INTO roles (name) VALUES ('user');
+
+-- cambiar nombre de database
+ALTER DATABASE taskapp RENAME TO taskapp_dev;

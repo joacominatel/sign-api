@@ -17,22 +17,22 @@
 
         <ul class="all-tasks">
             {% for task in tasks %}
-                <div class="card {% if task[5] == 1 %} completed {% endif %}">
+                <div class="card {% if task.completed == 't' %} completed {% endif %}">
                     <div class="card-header">
-                        <h2>{{ task[2] }}</h2>
+                        <h2>{{ task.title }}</h2>
                         <br>
                     </div>
                     <div class="card-body">
-                        <p>{{ task[3] }}</p>
-                        <p>{{ task[5] }}</p>
+                        <p>{{ task.description }}</p>
+                        <p>{{ task.due_date }}</p>
                     </div>
                     <div class="card-footer">
                         <div class="buttons-funcs">
                             <input class="task-checkbox" type="checkbox" 
                                 {% if task[5] == True %} checked {% endif %}
-                            onchange="updateTaskCompletion(this, {{ task[0] }})">
+                            onchange="updateTaskCompletion(this, {{ task.id }})">
                             <div class="delete-button">
-                                <button onclick="deleteTask(this)" data-id="{{ task[0] }}">
+                                <button onclick="deleteTask(this)" data-id="{{ task.id }}">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>

@@ -1,10 +1,22 @@
-import flask, psycopg2, os
+import flask, os
 from flask import jsonify, request, render_template, redirect, session
-from contextlib import contextmanager
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-import random
 from datetime import datetime
+from backend.db import init_app, db
+from backend.models.User import User
+from backend.models.UserRoles import UserRoles
+from backend.models.Tasks import Task
+from backend.models.Groups import Group
+from backend.models.Roles import Roles
+from backend.models.GroupMembers import GroupMembers
+from backend.models.GroupPosts import GroupPosts
+from backend.models.PostUpVotes import PostUpVotes
+
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import joinedload, aliased
+from sqlalchemy.sql import func, exists, and_, or_
 
 load_dotenv('.env')
 
@@ -14,33 +26,22 @@ app = flask.Flask(__name__)
 app.secret_key = os.environ['SECRET_KEY']
 app.config['UPLOAD_FOLDER'] = os.environ['UPLOAD_FOLDER']
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16 MB
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['SQLALCHEMY_DATABASE_URI']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# Database connection
-@contextmanager
-def get_db():
-    conn = psycopg2.connect(
-        dbname=os.environ['DB_NAME'],
-        user=os.environ['DB_USER'],
-        password=os.environ['DB_PASS'],
-        host=os.environ['DB_HOST'],
-        port=os.environ['DB_PORT']
-    )
-    cur = conn.cursor()
-    try:
-        yield cur
-    except Exception as e:
-        print(e)
-        raise
-    finally:
-        conn.commit()
-        cur.close()
-        conn.close()
+db = init_app(app)
 
 # Main page
 @app.route('/', methods=['GET'])
 def main():
     if 'username' in session:
-        return render_template('index.html', tasks=get_tasks())
+        # get all data of last tasks of user
+        user = User.query.filter_by(username=session['username']).first()
+        if not user:
+            return redirect('/errors/denied')
+        
+        tasks = Task.query.filter_by(user_id=user.id).order_by(Task.priority).all()
+        return render_template('index.html', tasks=tasks)
     else:
         return render_template('index.html')
     
@@ -51,19 +52,32 @@ def home():
 
 @app.route('/get_tasks', methods=['GET'])
 def get_tasks():
-    # get tasks from the db of user in session searching by id
-    with get_db() as db:
-        db.execute('SELECT * FROM tasks WHERE user_id = (SELECT id FROM users WHERE username = %s ORDER BY priority)', (session['username'],))
-        tasks = db.fetchall()
-    return tasks
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}), 401
+
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    tasks = Task.query.filter_by(user_id=user.id).order_by(Task.priority).all()
+
+    tasks_data = [{
+        'id': task.id,
+        'title': task.title,
+        'description': task.description,
+        'due_date': task.due_date.isoformat() if task.due_date else None,
+        'priority': task.priority,
+        'completed': task.completed
+    } for task in tasks]
+
+    return jsonify(tasks_data), 200
 
 @app.route('/complete_task', methods=['POST'])
 def complete_task():
     data = request.json
     print(data)
     try:
-        with get_db() as db:
-            db.execute('UPDATE tasks SET completed = %s WHERE id = %s', (data['completed'], data['taskId']))
+        db.execute('UPDATE tasks SET completed = %s WHERE id = %s', (data['completed'], data['taskId']))
         return jsonify({'message': 'Task completed'})
     
     except Exception as e:
@@ -73,9 +87,9 @@ def complete_task():
 @app.route('/delete_task', methods=['POST'])
 def delete_task():
     data = request.json
+
     try:
-        with get_db() as db:
-            db.execute('DELETE FROM tasks WHERE id = %s', (data['taskId'],))
+        db.execute('DELETE FROM tasks WHERE id = %s', (data['taskId'],))
         return jsonify({'message': 'Task deleted'})
     except Exception as e:
         print(e)
@@ -83,47 +97,95 @@ def delete_task():
 
 @app.route('/add_task', methods=['POST'])
 def add_task():
+    if 'username' not in session:
+        return jsonify({'message': 'No user logged in'}), 401
+
     data = request.json
     try:
-        with get_db() as db:
-            if data['dueDate']:
-                db.execute('INSERT INTO tasks (user_id, title, description, due_date, priority, group_id) VALUES ((SELECT id FROM users WHERE username = %s), %s, %s, %s, %s, %s)', (session['username'], data['title'], data['description'], data['dueDate'], data['priority'], 6))
-            else:
-                db.execute('INSERT INTO tasks (user_id, title, description, priority, group_id) VALUES ((SELECT id FROM users WHERE username = %s), %s, %s, %s, %s)', (session['username'], data['title'], data['description'], data['priority'], 6))
+        # Busca el usuario en la base de datos
+        user = User.query.filter_by(username=session['username']).first()
+        if not user:
+            return jsonify({'message': 'User not found'}), 404
 
-        return jsonify({'message': 'Task added'})
-    except Exception as e:
-        print(e)
-        return jsonify({'message': 'Error adding task'})
-    
+        # Crea la nueva tarea
+        new_task = Task(
+            user_id=user.id,
+            title=data['title'],
+            description=data['description'],
+            due_date=data.get('dueDate'),  # get retornará None si 'dueDate' no está presente
+            priority=data['priority'],
+            completed=False,  # Asume que la tarea no está completada al crearse
+        )
+
+        # Añade la tarea a la base de datos
+        db.session.add(new_task)
+        db.session.commit()
+
+        return jsonify({'message': 'Task added successfully'}), 201
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(str(e))
+        return jsonify({'message': 'Error adding task'}), 500
+
+
 @app.route('/tasks', methods=['GET'])
 def tasks():
-    if 'username' in session:
-        return render_template('tasks.html', tasks=get_tasks())
-    else:
+    # get all data of tasks of user
+    if 'username' not in session:
         return redirect('/errors/denied')
+    
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return redirect('/errors/denied')
+    
+    tasks = Task.query.filter_by(user_id=user.id).order_by(Task.priority).all()
+    return render_template('tasks.html', tasks=tasks)
 
 @app.route('/register', methods=['POST'])
 def register():
-    # recibe un json con username, name, password, email
     data = request.json
 
+    # validan los datos
+    if not data['username'] or not data['password'] or not data['name'] or not data['email']:
+        return jsonify({'status': 'error', 'message': 'All fields are required'}), 400
+    
+    hashed_password = generate_password_hash(data['password'])
+
+    new_user = User(
+        username=data['username'],
+        name=data['name'],
+        password=hashed_password,
+        email=data['email'],
+        profile_image_url='../default-user.webp',
+        created_at=datetime.now(),
+        updated_at=datetime.now()
+    )
+
     try:
-        with get_db() as db:
-            db.execute('INSERT INTO users (username, name, password, email, profile_image_url) VALUES (%s, %s, %s, %s, %s)', (data['username'], data['name'], data['password'], data['email'], '../default-user.webp'))
-            db.execute('INSERT INTO user_roles (user_id, role_id) VALUES ((SELECT id FROM users WHERE username = %s), (SELECT id FROM roles WHERE name = %s))', (data['username'], 'user'))
+        db.session.add(new_user)
+        db.session.flush()
+
+        # Asigna el rol de usuario a la nueva cuenta
+        new_user_role = UserRoles(user_id=new_user.id, role_id=2)
+        db.session.add(new_user_role)
+
+        db.session.commit()
+
+        # configurar la nueva sesion del usuario
         session['username'] = data['username']
         session['name'] = data['name']
         session['email'] = data['email']
-        session['profile_image_url'] = '../default-user.webp'
-        session['created_at'] = datetime.now()
-        session['updated_at'] = datetime.now()
+        session['profile_image_url'] = '/static/default-user.webp'
+        session['created_at'] = datetime.strftime(new_user.created_at, '%Y-%m-%d %H:%M:%S')
+        session['updated_at'] = datetime.strftime(new_user.updated_at, '%Y-%m-%d %H:%M:%S')
         session['role'] = 'user'
-         
-        return redirect('/')
-    except Exception as e:
-        print(e)
-        return jsonify({'message': 'Error creating user'})
+
+        return jsonify({'status': 'success', 'message': 'User registered'}), 201
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(str(e))
+        return jsonify({'status': 'error', 'message': 'Error registering user'}), 500
 
 @app.route('/register', methods=['GET'])
 def register_form():
@@ -132,43 +194,36 @@ def register_form():
 @app.route('/login', methods=['POST'])
 def login():
     data = request.json
-    try:
-        with get_db() as db:
-            db.execute('SELECT username FROM users WHERE username = %s AND password = %s', (data['username'], data['password']))
-            user = db.fetchone()
-        if user:
-            session['username'] = data['username']
-            with get_db() as db:
-                db.execute('SELECT username, name, profile_image_url, created_at, updated_at, email FROM users WHERE username = %s', (session['username'],))
-                data = db.fetchone()
-                db.execute('SELECT roles.name FROM roles, user_roles WHERE roles.id = user_roles.role_id AND user_roles.user_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
-                role = db.fetchone()
-                response = {
-                    'status': 'success',  # Indicate a successful login
-                    'message': 'Logged in',
-                    'username': data[0],
-                    'name': data[1],
-                    'profile_image_url': data[2],
-                    'created_at': data[3],
-                    'updated_at': data[4],
-                    'email': data[5],
-                    'role': role[0]
-                }
 
-                session['username'] = data[0]
-                session['name'] = data[1]
-                session['profile_image_url'] = data[2]
-                session['created_at'] = datetime.strftime(data[3], '%Y-%m-%d %H:%M:%S')
-                session['updated_at'] = datetime.strftime(data[4], '%Y-%m-%d %H:%M:%S')
-                session['email'] = data[5]
-                session['role'] = role[0]
+    username = data.get('username')
+    password = data.get('password')
 
-                return jsonify(response), 200
-        else:
-            return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401  # Use appropriate status code
-    except Exception as e:
-        print(e)
-        return jsonify({'status': 'error', 'message': 'Error logging in'}), 500  # Use appropriate status code
+    if not username or not password:
+        return jsonify({'status': 'error', 'message': 'All fields are required'}), 400
+    
+    user = User.query.filter_by(username=username).first()
+
+    if user and check_password_hash(user.password, password):
+        session['username'] = user.username
+        session['name'] = user.name
+        session['profile_image_url'] = user.profile_image_url
+        session['created_at'] = datetime.strftime(user.created_at, '%Y-%m-%d %H:%M:%S')
+        session['updated_at'] = datetime.strftime(user.updated_at, '%Y-%m-%d %H:%M:%S')
+        session['email'] = user.email
+
+        response = {
+            'status': 'success',
+            'message': 'User logged in',
+            'username': user.username,
+            'name': user.name,
+            'profile_image_url': user.profile_image_url,
+            'created_at': datetime.strftime(user.created_at, '%Y-%m-%d %H:%M:%S'),
+            'updated_at': datetime.strftime(user.updated_at, '%Y-%m-%d %H:%M:%S'),
+            'email': user.email,
+        }
+        return jsonify(response), 200
+    return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401
+    
 
 @app.route('/login', methods=['GET'])
 def login_form():
@@ -193,39 +248,65 @@ def update_user():
     
     data = request.json
 
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    
     try:
-        with get_db() as db:
-            db.execute('UPDATE users SET name = %s, email = %s, updated_at = CURRENT_TIMESTAMP WHERE username = %s', (data['name'], data['email'], session['username']))
-        session['name'] = data['name']
-        session['email'] = data['email']
-        return jsonify({'message': 'User updated'})
-    except Exception as e:
-        print(e)
-        return jsonify({'message': 'Error updating user'})
+        user.name = data['name']
+        user.email = data['email']
+        user.updated_at = datetime.now()
+
+        db.session.commit()
+
+        session['name'] = user.name
+        session['email'] = user.email
+        session['updated_at'] = datetime.strftime(user.updated_at, '%Y-%m-%d %H:%M:%S')
+
+        return jsonify({'message': 'User updated'}), 200
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(str(e))
+        return jsonify({'message': 'Error updating user'}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    if 'username' in session:
-        file = request.files['file']
-        if file.filename == '':
-            return jsonify({'message': 'No file selected'})
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename + '_' + session['username'] + '_' + str(random.randint(1000, 9999)) + '.png')
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            save_image_user_db(session['username'], filename)
-            session['profile_image_url'] = filename
-            return jsonify({'message': 'File uploaded'})
-        else:
-            return jsonify({'message': 'Invalid file'})
-    else:
+    if 'username' not in session:
         return redirect('/errors/denied')
+    
+    if 'file' not in request.files:
+        return jsonify({'message': 'No file part'}), 400
+    
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'message': 'No selected file'}), 400
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        # change the name of the file to the username
+        filename = f'{session["username"]}_{filename}.png'
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+        
+        save_image_user_db(session['username'], filename)
+        session['profile_image_url'] = f'{filename}'
+        
+        return jsonify({'message': 'File uploaded'}), 200
+    
+    return jsonify({'message': 'File not allowed'}), 400
+
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
 
 def save_image_user_db(username, filename):
-    with get_db() as db:
-        db.execute('UPDATE users SET profile_image_url = %s WHERE username = %s', (filename, username))
+    try:
+        user = User.query.filter_by(username=username).first()
+        user.profile_image_url = f'{filename}'
+        db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        print(str(e))
+
 
 @app.route('/errors/denied', methods=['GET'])
 def denied():
@@ -233,93 +314,102 @@ def denied():
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
-    if 'username' in session:
-        # check if users has admin role in the database
-        with get_db() as db:
-            db.execute('SELECT roles.name FROM roles, user_roles WHERE roles.id = user_roles.role_id AND user_roles.user_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
-            role = db.fetchone()
-            if role[0] == 'admin':
-                # send last users to the dashboard
-                db.execute('SELECT username, name, profile_image_url, created_at, updated_at, email FROM users ORDER BY created_at DESC LIMIT 4')
-                recent_users = db.fetchall()
+    if 'username' not in session:
+        return redirect('/errors/denied')        
 
-                # get views of app stats
-                db.execute('SELECT COUNT(*) FROM users')
-                total_users = db.fetchone()
-                db.execute('SELECT COUNT(*) FROM tasks')
-                total_tasks = db.fetchone()
-                db.execute('SELECT COUNT(*) FROM groups')
-                total_groups = db.fetchone()
-                db.execute('SELECT COUNT(*) FROM roles')
-                total_roles = db.fetchone()
-                
-                # send all users
-                return render_template('admin/dashboard.html', title='Dashboard', users=recent_users, total_users=total_users, total_tasks=total_tasks, total_groups=total_groups, total_roles=total_roles)
-            else:
-                return redirect('/errors/denied')
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return redirect('/errors/denied')
+    
+    # get user roles
+    if not any(role.name == 'admin' for role in user.roles):
+        return redirect('/errors/denied')
+    
+    #if admin
+    recent_user = User.query.order_by(User.created_at.desc()).limit(5).all()
+    total_users = db.session.query(func.count(User.id)).scalar()
+    total_tasks = db.session.query(func.count(Task.id)).scalar()
+    total_groups = db.session.query(func.count(Group.id)).scalar()
+    total_roles = db.session.query(func.count(Roles.id)).scalar()
+
+    # render dashboard
+    return render_template(
+        'admin/dashboard.html',
+        title='Dashboard',
+        users=recent_user,
+        total_users=total_users,
+        total_tasks=total_tasks,
+        total_groups=total_groups,
+        total_roles=total_roles
+    )
 
 @app.route('/config_user', methods=['GET'])
 def config_user():
-    if 'username' in session:
-        return render_template('config/config_user.html', title=f'Configuración de {session["username"]}')
-    else:
+    if not 'username' in session:
         return redirect('/errors/denied')
+    
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return redirect('/errors/denied')
+    
+    return render_template('config/config_user.html', title='Configuración de usuario', user=user)
+
     
 @app.route('/groups', methods=['GET'])
 def groups():
-    groups = []
-    if 'username' in session:
-        with get_db() as db:
-            db.execute('SELECT * FROM groups, group_members WHERE groups.id = group_members.group_id AND group_members.user_id = (SELECT id FROM users WHERE username = %s)', (session['username'],))
-            groups = db.fetchall()
-
-            total_members = []
-            total_tasks = []
-            total_members = []
-
-            for group in groups:
-                db.execute('SELECT COUNT(*) FROM group_members WHERE group_id = %s', (group[0],))
-                total_members.append(db.fetchone()[0])
-                db.execute('SELECT COUNT(*) FROM tasks WHERE group_id = %s', (group[0],))
-                total_tasks.append(db.fetchone()[0])
-
-            user_id = []
-            db.execute('SELECT id FROM users WHERE username = %s', (session['username'],))
-            user_id = db.fetchone()[0]
-
-        return render_template('groups/groups.html', groups=groups, total_tasks=total_tasks, total_members=total_members, user_id=user_id)
-    else:
+    if 'username' not in session:
         return redirect('/errors/denied')
+
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return redirect('/errors/denied')
+
+    # Obtener grupos y cargar miembros y tareas con 'joinedload' para eficiencia
+    user_groups = db.session.query(Group).join(GroupMembers).options(
+        joinedload(Group.tasks)
+    ).filter(GroupMembers.user_id == user.id).all()
+
+    groups_data = []
+    for group in user_groups:
+        total_members = db.session.query(func.count(GroupMembers.id)).filter(GroupMembers.group_id == group.id).scalar()
+        total_tasks = db.session.query(func.count(Task.id)).filter(Task.group_id == group.id).scalar()
+        groups_data.append({
+            'group': group,
+            'total_members': total_members,
+            'total_tasks': total_tasks
+        })
+
+    return render_template('groups/groups.html',
+                            groups=groups_data, 
+                            user_id=user.id)
     
 @app.route('/groups/create', methods=['POST'])
 def create_group():
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}), 401
 
-    """
-    CREATE TABLE groups (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    owner_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-
-    CREATE TABLE group_members (
-    group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    PRIMARY KEY (group_id, user_id)
-    );
-    """
     data = request.json
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
 
     try:
-        with get_db() as db:
-            db.execute('INSERT INTO groups (name, description, owner_id) VALUES (%s, %s, (SELECT id FROM users WHERE username = %s))', (data['name'], data['description'], session['username']))
-            db.execute('INSERT INTO group_members (group_id, user_id) VALUES ((SELECT id FROM groups WHERE name = %s), (SELECT id FROM users WHERE username = %s))', (data['name'], session['username']))
-        return jsonify({'message': 'Group created'})
-    except Exception as e:
+        new_group = Group(name=data['name'], description=data['description'], owner_id=user.id)
+        db.session.add(new_group)
+        db.session.flush()  # Flush to get the new group ID without committing
+
+        # Automatically add the creator as a member of the group
+        new_member = GroupMembers(group_id=new_group.id, user_id=user.id)
+        db.session.add(new_member)
+        
+        db.session.commit()
+        return jsonify({'message': 'Group created', 'group_id': new_group.id}), 201
+
+    except SQLAlchemyError as e:
+        db.session.rollback()
         print(e)
-        return jsonify({'message': 'Error creating group'})
+        return jsonify({'message': 'Error creating group'}), 500
+    
 
 @app.route('/groups/create', methods=['GET'])
 def create_group_form():
@@ -327,186 +417,323 @@ def create_group_form():
 
 @app.route('/groups/<int:group_id>', methods=['GET'])
 def group(group_id):
-    group = {}
-    if 'username' in session:
-        with get_db() as db:
-            db.execute('SELECT * FROM groups, group_members WHERE groups.id = group_members.group_id AND groups.id = %s AND group_members.user_id = (SELECT id FROM users WHERE username = %s)', (group_id, session['username']))
-            group = db.fetchone()
-            members = []
-            db.execute('SELECT id, username, profile_image_url FROM users, group_members WHERE users.id = group_members.user_id AND group_members.group_id = %s', (group_id,))
-            members = db.fetchall()
-            tasks = []
-            db.execute('SELECT * FROM tasks WHERE group_id = %s', (group_id,))
-            tasks = db.fetchall()
-            user_tasks = []
-            db.execute('SELECT * FROM tasks WHERE user_id = (SELECT id FROM users WHERE username = %s) AND group_id <> %s;', (format(session['username']), group_id))
-            user_tasks = db.fetchall()
-            posts = []
-            db.execute('SELECT * FROM group_posts WHERE group_id = %s', (group_id,))
-            posts = db.fetchall()
-            upvotes = []
-            for post in posts:
-                db.execute('SELECT COUNT(*) FROM post_upvotes WHERE post_id = %s', (post[0],))
-                upvotes.append(db.fetchone()[0])
-
-
-        return render_template('groups/group.html', group=group, members=members, tasks=tasks, user_tasks=user_tasks, posts=posts, upvotes=upvotes)
-    else:
+    if 'username' not in session:
         return redirect('/errors/denied')
+
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    group = Group.query.get(group_id)
+    if not group:
+        return jsonify({'message': 'Group not found'}), 404
+
+    # Verificar si el usuario es miembro del grupo
+    is_member = GroupMembers.query.filter_by(group_id=group_id, user_id=user.id).first()
+    if not is_member:
+        return jsonify({'message': 'Access denied'}), 403
+
+    try:
+        members = User.query.join(GroupMembers, User.id == GroupMembers.user_id).filter(GroupMembers.group_id == group_id).all()
+        tasks = Task.query.filter_by(group_id=group_id).all()
+        user_tasks = Task.query.filter(Task.user_id == user.id, Task.group_id == None).all()
+        posts = GroupPosts.query.filter_by(group_id=group_id).all()
+        
+        upvotes = []
+        for post in posts:
+            count = PostUpVotes.query.filter_by(post_id=post.id).count()
+            upvotes.append(count)
+        
+        # Aquí debes convertir los objetos a un formato adecuado para jsonify
+        group_details = {
+            'id': group.id,
+            'name': group.name,
+            'description': group.description,
+            'owner_id': group.owner_id
+        }
+
+        members_details = []
+        for member in members:
+            members_details.append({
+                'id': member.id,
+                'username': member.username,
+                'name': member.name,
+                'profile_image_url': member.profile_image_url
+            })
+
+        tasks_details = []
+        for task in tasks:
+            tasks_details.append({
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'due_date': task.due_date,
+                'priority': task.priority,
+                'completed': task.completed,
+                'user_id': task.user_id,
+                'group_id': task.group_id
+            })
+
+        user_tasks_details = []
+        for task in user_tasks:
+            user_tasks_details.append({
+                'id': task.id,
+                'title': task.title,
+                'description': task.description,
+                'due_date': task.due_date,
+                'priority': task.priority,
+                'completed': task.completed,
+                'user_id': task.user_id,
+                'group_id': task.group_id
+            })
+
+        posts_details = []
+        for post in posts:
+            posts_details.append({
+                'id': post.id,
+                'user_id': post.user_id,
+                'title': post.title,
+                'content': post.content,
+                'created_at': post.created_at,
+                'updated_at': post.updated_at
+            })
+
+        return render_template('groups/group.html',
+                               group=group_details,
+                               members=members_details,
+                               tasks=tasks_details,
+                               user_tasks=user_tasks_details,
+                               posts=posts_details,
+                               upvotes=upvotes)
+    except Exception as e:
+        print(e)
+        return jsonify({'message': 'Error getting group details'}), 500 
+
 
 @app.route('/groups/<int:group_id>/add_member', methods=['POST'])
 def add_member(group_id):
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}), 401
+
     data = request.json
+    user_to_add = User.query.filter_by(username=data['username']).first()
+    if not user_to_add:
+        return jsonify({'message': 'User not found'}), 404
+
+    # Verificar si el grupo existe
+    group = Group.query.get(group_id)
+    if not group:
+        return jsonify({'message': 'Group not found'}), 404
+
+    # Verificar si el usuario ya es miembro del grupo
+    existing_member = GroupMembers.query.filter_by(group_id=group_id, user_id=user_to_add.id).first()
+    if existing_member:
+        return jsonify({'message': 'User already a member'}), 409
+
     try:
-        with get_db() as db:
-            db.execute('INSERT INTO group_members (group_id, user_id) VALUES (%s, (SELECT id FROM users WHERE username = %s))', (group_id, data['username']))
-        return jsonify({'message': 'Member added'})
+        new_member = GroupMembers(group_id=group_id, user_id=user_to_add.id)
+        db.session.add(new_member)
+        db.session.commit()
+        return jsonify({'message': 'Member added'}), 201
     except Exception as e:
+        db.session.rollback()
         print(e)
-        return jsonify({'message': 'Error adding member'})
+        return jsonify({'message': 'Error adding member'}), 500
     
 @app.route('/groups/<int:group_id>/delete_member', methods=['POST'])
 def delete_member(group_id):
     data = request.json
+
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}), 401
+    
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+    
+    # Verificar si el grupo existe
+    group = Group.query.get(group_id)
+    if not group:
+        return jsonify({'message': 'Group not found'}), 404
+    
+    # Verificar si el usuario es miembro del grupo
+    is_member = GroupMembers.query.filter_by(group_id=group_id, user_id=user.id).first()
+    if not is_member:
+        return jsonify({'message': 'Access denied'}), 403
+    
+    # Verificar si el usuario a eliminar es miembro del grupo
+    member_to_delete = GroupMembers.query.filter_by(group_id=group_id, user_id=data['userId']).first()
+    if not member_to_delete:
+        return jsonify({'message': 'User not a member'}), 404
+    
     try:
-        with get_db() as db:
-            # get id of owner of the group
-            db.execute('SELECT owner_id FROM groups WHERE id = %s', (group_id,))
-            if data['memberId'] == db.fetchone()[0]:
-                return jsonify({'message': 'Error deleting member: owner of the group'})
-            db.execute('DELETE FROM group_members WHERE group_id = %s AND user_id = %s', (group_id, data['memberId']))
-        return jsonify({'message': 'Member deleted'})
+        db.session.delete(member_to_delete)
+        db.session.commit()
+        return jsonify({'message': 'Member deleted'}), 200
+    
     except Exception as e:
+        db.session.rollback()
         print(e)
-        return jsonify({'message': 'Error deleting member'})
+        return jsonify({'message': 'Error deleting member'}), 500
+    
     
 @app.route('/search_users', methods=['GET'])
 def search_users():
-    username_query = request.args.get('username', '')
-    try:
-        group_id = request.args.get('group_id', None)
-    except:
-        group_id = None
-    users = []
-    if 'username' in session:
-        with get_db() as db:
-            # Modifica esta consulta para que también verifique si el usuario ya es miembro del grupo
-            if group_id:
-                query = """
-            SELECT users.username, users.profile_image_url, 
-                   CASE WHEN group_members.user_id IS NULL THEN FALSE ELSE TRUE END as is_member
-            FROM users
-            LEFT JOIN group_members ON users.id = group_members.user_id AND group_members.group_id = %s
-            WHERE users.username ILIKE %s AND users.username != %s AND users.id NOT IN (SELECT user_id FROM group_members WHERE group_id = %s)
-            """
-                db.execute(query, (group_id, f'%{username_query}%', session['username'], group_id))
-                users = db.fetchall()
-                return jsonify(users)
-            else:
-                query = """
-            SELECT users.username, users.profile_image_url, 
-                   CASE WHEN group_members.user_id IS NULL THEN FALSE ELSE TRUE END as is_member
-            FROM users
-            LEFT JOIN group_members ON users.id = group_members.user_id
-            WHERE users.username ILIKE %s AND users.username != %s
-            LIMIT 5
-            """
-                db.execute(query, (f'%{username_query}%', session['username']))
-                users = db.fetchall()
-                return jsonify(users)
-    else:
+    if 'username' not in session:
         return redirect('/errors/denied')
+
+    username_query = request.args.get('username', '')
+    group_id = request.args.get('group_id', None)
+
+    # Crear un alias para group_members para facilitar la consulta de membresía
+    member_alias = aliased(GroupMembers)
+
+    # Filtrar usuarios por criterio de búsqueda y excluir al usuario actual de los resultados
+    query = db.session.query(
+        User.username,
+        User.profile_image_url,
+        User.id.notin_(
+            db.session.query(member_alias.user_id)
+            .filter(member_alias.group_id == group_id)
+        ).label('is_member')
+    ).filter(
+        User.username.ilike(f"%{username_query}%"),
+        User.username != session['username']
+    )
+
+    # Ajustar la consulta si se proporciona group_id
+    if group_id:
+        query = query.outerjoin(GroupMembers, and_(GroupMembers.user_id == User.id, GroupMembers.group_id == group_id))
+    else:
+        query = query.limit(5)  # Limitar los resultados si no se busca dentro de un grupo específico
+
+    users = query.all()
+
+    # format results
+    users_data = [{
+        'username': user.username,
+        'profile_image_url': user.profile_image_url,
+        'is_member': not user.is_member
+    } for user in users]
+
+    return jsonify(users_data), 200
     
 @app.route('/groups/<int:group_id>/edit_group', methods=['POST'])
 def edit_group(group_id):
     data = request.json
+    group = Group.query.get(group_id)
+    if not group:
+        return jsonify({'message': 'Group not found'}), 404
+    
     try:
-        with get_db() as db:
-            db.execute('UPDATE groups SET name = %s, description = %s WHERE id = %s', (data['name'], data['description'], group_id))
-        return jsonify({'message': 'Group updated'})
+        group.name = data['name']
+        group.description = data['description']
+        db.session.commit()
+        return jsonify({'message': 'Group updated'}), 200
     except Exception as e:
+        db.session.rollback()
         print(e)
-        return jsonify({'message': 'Error updating group'})
+        return jsonify({'message': 'Error updating group'}), 500
 
 @app.route('/groups/<int:group_id>/add_task', methods=['POST'])
 def add_task_to_group(group_id):
-    # receive task.id, change group_id on that task to group_id
     data = request.json
+    task = Task.query.get(data['taskId'])
+    if not task:
+        return jsonify({'message': 'Task not found'}), 404
+    
     try:
-        with get_db() as db:
-            db.execute('UPDATE tasks SET group_id = %s WHERE id = %s', (group_id, data['taskId']))
-        return jsonify({'message': 'Task added to group'})
+        task.group_id = group_id
+        db.session.commit()
+        return jsonify({'message': 'Task added to group'}), 200
     except Exception as e:
+        db.session.rollback()
         print(e)
-        return jsonify({'message': 'Error adding task to group'})
+        return jsonify({'message': 'Error adding task to group'}), 500
     
 @app.route('/profile/<username>/', methods=['GET'])
 def profile(username):
-    if 'username' in session:
-        try:
-            with get_db() as db:
-                # get user id
-                db.execute('SELECT id FROM users WHERE username = %s', (username,))
-                user = db.fetchone()[0]
-                db.execute('SELECT COUNT(*) FROM tasks WHERE user_id = %s', (user,))
-                total_tasks = db.fetchone()
-                db.execute('SELECT COUNT(*) FROM tasks WHERE user_id = %s AND completed = TRUE', (user,))
-                completed_tasks = db.fetchone()
-                db.execute('SELECT COUNT(*) FROM tasks WHERE user_id = %s AND completed = FALSE', (user,))
-                pending_tasks = db.fetchone()
-                db.execute('SELECT username, name, profile_image_url, created_at, email FROM users WHERE id = %s', (user,))
-                user_data = db.fetchone()
-
-            return render_template('profile.html', title=f'Perfil de {session["username"]}', total_tasks=total_tasks, completed_tasks=completed_tasks, pending_tasks=pending_tasks, user=user_data)
-        except:
-            return render_template('errors/user_not_found.html', title='Usuario no encontrado')
-    else:
+    if 'username' not in session:
         return redirect('/login')
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return render_template('errors/user_not_found.html', title='Usuario no encontrado')
+
+    total_tasks = db.session.query(func.count(Task.id)).filter(Task.user_id == user.id).scalar()
+    completed_tasks = db.session.query(func.count(Task.id)).filter(Task.user_id == user.id, Task.completed == True).scalar()
+    pending_tasks = db.session.query(func.count(Task.id)).filter(Task.user_id == user.id, Task.completed == False).scalar()
+
+    user_data = {
+        'username': user.username,
+        'name': user.name,
+        'profile_image_url': user.profile_image_url,
+        'created_at': user.created_at,
+        'email': user.email
+    }
+
+    return render_template(
+        'profile.html',
+        title=f'Perfil de {user.username}', 
+        total_tasks=total_tasks, 
+        completed_tasks=completed_tasks, 
+        pending_tasks=pending_tasks, 
+        user=user_data)
 
 @app.route('/groups/<int:group_id>/posts', methods=['POST'])
 def add_post(group_id):
-    data = request.json
-
     if 'username' not in session:
-        return jsonify({'message': 'User not logged in'}, 401)
+        return jsonify({'message': 'User not logged in'}), 401
+
+    data = request.json
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
 
     try:
-        with get_db() as db:
-            db.execute(
-                '''
-                INSERT INTO group_posts (group_id, user_id, title, content, created_at, updated_at)
-                VALUES (%s, (SELECT id FROM users WHERE username = %s), %s, %s, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                ''', (group_id, session['username'], data['title'], data['content'])
-            )
-            # insert into post_votes
-            db.execute(
-                '''
-                INSERT INTO post_upvotes (post_id, user_id)
-                VALUES ((SELECT id FROM group_posts WHERE title = %s), (SELECT id FROM users WHERE username = %s))
-                ''', (data['title'], session['username'])
-            )
-        return jsonify({'message': 'Post added'}, 200)
+        # Crear y añadir el post al grupo
+        new_post = GroupPosts(group_id=group_id, user_id=user.id, title=data['title'], content=data['content'], created_at=datetime.now(), updated_at=datetime.now())
+        db.session.add(new_post)
+        db.session.flush()  # Esto permite usar el ID del post antes de hacer commit
+
+        # Añadir automáticamente un upvote del usuario al post
+        upvote = PostUpVotes(post_id=new_post.id, user_id=user.id)
+        db.session.add(upvote)
+
+        db.session.commit()
+        return jsonify({'message': 'Post added'}), 200
     except Exception as e:
+        db.session.rollback()
         print(e)
-        return jsonify({'message': 'Error adding post'}, 500)
+        return jsonify({'message': 'Error adding post'}), 500
 
 @app.route('/groups/posts/<int:post_id>/upvote', methods=['POST'])
 def upvote_post(post_id):
     if 'username' not in session:
-        return jsonify({'message': 'User not logged in'}, 401)
+        return jsonify({'message': 'User not logged in'}), 401
+
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    post = GroupPosts.query.get(post_id)
+    if not post:
+        return jsonify({'message': 'Post not found'}), 404
+
+    # Verifica si el usuario ya ha votado este post
+    existing_upvote = PostUpVotes.query.filter_by(post_id=post_id, user_id=user.id).first()
+    if existing_upvote:
+        return jsonify({'message': 'User has already upvoted this post'}), 409
 
     try:
-        with get_db() as db:
-            db.execute(
-                '''
-                INSERT INTO post_upvotes (post_id, user_id)
-                VALUES (%s, (SELECT id FROM users WHERE username = %s))
-                ''', (post_id, session['username'])
-            )
-        return jsonify({'message': 'Post upvoted'}, 200)
+        new_upvote = PostUpVotes(post_id=post_id, user_id=user.id)
+        db.session.add(new_upvote)
+        db.session.commit()
+        return jsonify({'message': 'Post upvoted'}), 200
     except Exception as e:
+        db.session.rollback()
         print(e)
-        return jsonify({'message': 'Error upvoting post'}, 500)
+        return jsonify({'message': 'Error upvoting post'}), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
