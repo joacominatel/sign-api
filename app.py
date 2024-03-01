@@ -423,7 +423,12 @@ def create_group():
         db.session.add(new_member)
         
         db.session.commit()
-        return jsonify({'message': 'Group created', 'group_id': new_group.id}), 201
+        return jsonify(
+            {
+                'message': 'Group created',
+                'group_id': new_group.id,
+                'group_name': new_group.name
+            }), 201
 
     except SQLAlchemyError as e:
         db.session.rollback()

@@ -32,7 +32,13 @@ function registerUser(e) {
     });
 }
 
-function loginUser(e) {
+async function loginUser(e) {
+  const button = document.getElementById("register");
+  
+  button.disabled = true;
+  button.textContent = "Logging in...";
+  button.classList.add("loading");
+  
   e.preventDefault();
 
   // check if in input #username is an email or username
@@ -44,23 +50,17 @@ function loginUser(e) {
     password: password,
   };
 
-  // post data to server
-  axios
-    .post("/login", data)
-    .then((res) => {
-      const response = res.data;
-      if (response.status === "error") {
-        alert(response.message);
-        return;
-      } else {
-        alert("User logged in");
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 1000);
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-      alert("Error logging in user");
-    });
+
+  try {
+    const response = await axios.post("/login", data);
+    alert(
+      `Logueado con el usuario ${response.data.username}!`
+    );
+  } catch (error) {
+    console.error(error);
+  } finally {
+    button.textContent = "Login";
+    button.disabled = false;
+    button.classList.remove("loading");
+  }
 }
