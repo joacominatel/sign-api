@@ -115,3 +115,22 @@ window.addEventListener("scroll", function() {
   }
   lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
 });
+
+function showNotifications() {
+  const notifications = document.getElementById("notification-list");
+  notifications.classList.toggle("show");
+} 
+
+function readNotification(notificationId) {
+  axios
+    .post("/read_notification", {
+      notificationId: notificationId,
+    })
+    .then(function (response) {
+      console.log("Notification read");
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
+
+}

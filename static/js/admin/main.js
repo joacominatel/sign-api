@@ -34,3 +34,17 @@ document.getElementById('userSearchResults').addEventListener('click', function(
         location.href = '/profile/' + username;
     }
 });
+
+document.getElementById('sendSystemNotificationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const message = document.getElementById('notificationMessage').value;
+
+    axios.post('/send_system_notification', { message: message })
+         .then(function(response) {
+             alert(`System notification sent to ${response.data} users`);
+         })
+         .catch(function(error) {
+            alert('Error sending system notification');
+         });
+});

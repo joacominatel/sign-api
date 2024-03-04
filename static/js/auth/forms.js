@@ -28,12 +28,12 @@ async function registerUser(e) {
   try {
     const response = await axios.post("/register", data);
     alert(
-      `Usuario ${response.data.username} registrado con éxito!`
+      `Usuario ${response.data.user} registrado con éxito!`
     );
     window.location.href = "/";
   }
   catch (error) {
-    console.error(error);
+    alert("Error: " + error.response.data.message);
   }
   finally {
     button.textContent = "Register";

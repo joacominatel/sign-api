@@ -26,11 +26,11 @@
                 <i class="fas fa-moon" id="change-theme"></i>
             </ul>
             <ul>
-                <li><a href="{{ url_for('home') }}">Inicio</a></li>
-                <li><a href="{{ url_for('tasks') }}">Ver tareas</a></li>
-                <li><a href="{{ url_for('groups') }}">Grupos</a></li>
+                <a href="{{ url_for('home') }}">Inicio</a>
+                <a href="{{ url_for('tasks') }}">Ver tareas</a>
+                <a href="{{ url_for('groups') }}">Grupos</a>
                 {% if session['role'] == 'admin' %}
-                    <li><a href="{{ url_for('dashboard') }}">Admin</a></li>
+                    <a href="{{ url_for('dashboard') }}">Admin</a>
                 {% endif %}
             </ul>
             <ul>
@@ -38,6 +38,39 @@
                 <!-- profile menu on hover -->
                 <div class="input">
                     <input type="checkbox" id="profile-menu">
+                    <!-- notification  -->
+                        <div class="notification" id="notification" onclick="showNotifications()">
+                            <i class="fas fa-bell"></i>
+                            {% if unreaded_notifications > 0 %}
+                            <span id="notification-count">{{unreaded_notifications}}</span>
+                            {% else %}
+                            <span id="notification-count" style="display: none;"></span>
+                            {% endif %} 
+                        </div>
+                    <div class="notification-menu" id="notification-list">
+                        <ul>
+                            {% if notifications|length == 0 %}
+                            <li>
+                                <a href="#">
+                                    <p>No tienes notificaciones</p>
+                                </a>
+                            </li>
+                            {% else %}
+                            {% for notification in notifications %}
+                            <li
+                            {% if notification['read'] == False %}
+                            class="unread"
+                            onclick="readNotification( {{ notification['id'] }} )"
+                            {% endif %}
+                            >
+                                <a href="#">
+                                    <p>{{notification['message']}}</p>
+                                </a>
+                            </li>
+                            {% endfor %}
+                            {% endif %}
+                        </ul>
+                    </div>
                     <label for="profile-menu">
                         <div class="profile-picture">
                             {% if session['profile_image_url'] %}
@@ -45,28 +78,32 @@
                             {% else %}
                                 <img src="{{ url_for('static', filename='img/default-user.webp') }}" alt="profile picture">
                             {% endif %}
-                            </div>
+                        </div>
                     </label>
                     <div class="profile-menu">
                         <ul>
-                            <li>
-                                <i class="fas fa-user"></i>
-                                <a href="/profile/{{ session['username'] }}">Perfil</a>
-                            </li>
-                            <li>
-                                <i class="fas fa-cog"></i>
-                                <a href="{{ url_for('config_user') }}">Configuration</a>
-                            </li>
-                            <li>
-                                <i class="fas fa-sign-out-alt"></i>
-                                <a href="{{ url_for('logout') }}">Cerrar sesión</a>
-                            </li>
+                            <div class="item">
+                                
+                                <a href="/profile/{{ session['username'] }}"><i class="fas fa-user"></i>Perfil</a>
+                            </div>
+                            
+                            <div class="item">
+                                
+                                <a href="{{ url_for('config_user') }}"><i class="fas fa-cog"></i>Configuration</a>
+                            </div>
+                            
+                            <div class="item">
+                               
+                                <a href="{{ url_for('logout') }}"> <i class="fas fa-sign-out-alt"></i>Cerrar sesión</a>
+                            </div>
+    
                         </ul>
                     </div>
                 </div>
+                
                 {% else %}
-                <li><a href="{{ url_for('login') }}">Iniciar sesión</a></li>
-                <li><a href="{{ url_for('register') }}">Registrarse</a></li>
+                <a href="{{ url_for('login') }}">Iniciar sesión</a>
+                <a href="{{ url_for('register') }}">Registrarse</a>
                 {% endif %}
             </ul>
         </nav>

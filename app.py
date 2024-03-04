@@ -17,6 +17,8 @@ from backend.models.GroupMembers import GroupMembers
 from backend.models.GroupPosts import GroupPosts
 from backend.models.PostUpVotes import PostUpVotes
 from backend.models.GroupTasks import GroupTasks
+from backend.models.NotificationType import NotificationType
+from backend.models.Notifications import Notification
 
 # SQLALCHEMY
 from sqlalchemy.exc import SQLAlchemyError
@@ -36,6 +38,20 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = init_app(app)
 
+@app.context_processor
+def inject_notifications():
+    if 'username' in session:
+        user = User.query.filter_by(username=session['username']).first()
+        if not user:
+            return {}
+        
+        notifications = Notification.query.filter_by(user_id=user.id, read=False).order_by(Notification.created_at.desc()).limit(5).all()
+
+        unreaded_notifications = db.session.query(func.count(Notification.id)).filter(Notification.user_id == user.id, Notification.read == False).scalar()
+        return dict(unreaded_notifications=unreaded_notifications, notifications=notifications)
+    else:
+        return {}
+
 # Main page
 @app.route('/', methods=['GET'])
 def main():
@@ -44,8 +60,8 @@ def main():
         user = User.query.filter_by(username=session['username']).first()
         if not user:
             return redirect('/errors/denied')
-        
         tasks = Task.query.filter_by(user_id=user.id).order_by(Task.priority).all()
+
         return render_template('index.html', tasks=tasks)
     else:
         return render_template('index.html')
@@ -202,7 +218,7 @@ def register():
         session['updated_at'] = datetime.strftime(new_user.updated_at, '%Y-%m-%d %H:%M:%S')
         session['role'] = 'user'
 
-        return jsonify({'status': 'success', 'message': 'User registered'}), 201
+        return jsonify({'status': 'success', 'message': 'User registered', 'user': session['username']}), 201
     except SQLAlchemyError as e:
         db.session.rollback()
         print(str(e))
@@ -223,6 +239,9 @@ def login():
         return jsonify({'status': 'error', 'message': 'All fields are required'}), 400
     
     user = User.query.filter_by(username=username).first()
+
+    if not user:
+        return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401
 
     if user.is_active == False:
         return jsonify({'status': 'error', 'message': 'User is blocked'}), 401
@@ -654,6 +673,16 @@ def add_member(group_id):
     try:
         new_member = GroupMembers(group_id=group_id, user_id=user_to_add.id)
         db.session.add(new_member)
+
+
+        # send notification to user
+        new_notification = Notification(
+            user_id=user_to_add.id,
+            type_id=1,
+            message=f'Has sido añadido al grupo {group.name}'
+        )
+        db.session.add(new_notification)
+
         db.session.commit()
         return jsonify({'message': 'Member added'}), 201
     except Exception as e:
@@ -689,7 +718,16 @@ def delete_member(group_id):
     
     try:
         db.session.delete(member_to_delete)
+
+        # send notification to user
+        new_notification = Notification(
+            user_id=data['userId'],
+            type_id=4,
+            message=f'Has sido eliminado del grupo {group.name}'
+        )
+        db.session.add(new_notification)
         db.session.commit()
+        
         return jsonify({'message': 'Member deleted'}), 200
     
     except Exception as e:
@@ -719,12 +757,15 @@ def search_users():
         ).label('is_member')
     ).filter(
         User.username.ilike(f"%{username_query}%"),
-        User.username != session['username']
+        User.username != session['username'],
+        User.is_active == True,
+        
     )
 
     # Ajustar la consulta si se proporciona group_id
     if group_id:
         query = query.outerjoin(GroupMembers, and_(GroupMembers.user_id == User.id, GroupMembers.group_id == group_id))
+        query = query.filter(GroupMembers.group_id == None)  # Exclude users already in the group
     else:
         query = query.limit(5)  # Limitar los resultados si no se busca dentro de un grupo específico
 
@@ -854,6 +895,16 @@ def add_post(group_id):
         db.session.add(new_post)
         db.session.flush()  # Esto permite usar el ID del post antes de hacer commit
 
+        # send notification to all members of the group
+        members = GroupMembers.query.filter_by(group_id=group_id).all()
+        for member in members:
+            new_notification = Notification(
+                user_id=member.user_id,
+                type_id=3,
+                message=f'{user.username} ha publicado en el grupo'
+            )
+            db.session.add(new_notification)
+
         # Añadir automáticamente un upvote del usuario al post
         upvote = PostUpVotes(post_id=new_post.id, user_id=user.id)
         db.session.add(upvote)
@@ -886,7 +937,17 @@ def upvote_post(post_id):
     try:
         new_upvote = PostUpVotes(post_id=post_id, user_id=user.id)
         db.session.add(new_upvote)
+        
+        # send notification to user
+        new_notification = Notification(
+            user_id=post.user_id,
+            type_id=2,
+            message=f'{user.username} ha dado like a tu post'
+        )
+        db.session.add(new_notification)
+
         db.session.commit()
+
         return jsonify({'message': 'Post upvoted'}), 200
     except Exception as e:
         db.session.rollback()
@@ -905,6 +966,15 @@ def give_admin(username):
     try:
         new_user_role = UserRoles(user_id=user.id, role_id=1)
         db.session.add(new_user_role)
+
+        # send notification to user
+        new_notification = Notification(
+            user_id=user.id,
+            type_id=5,
+            message='Has sido promovido a administrador'
+        )
+        db.session.add(new_notification)
+
         db.session.commit()
         return jsonify({'message': 'Admin role given'}), 200
     except Exception as e:
@@ -924,6 +994,15 @@ def remove_admin(username):
     try:
         user_role = UserRoles.query.filter_by(user_id=user.id, role_id=1).first()
         db.session.delete(user_role)
+
+        # send notification to user
+        new_notification = Notification(
+            user_id=user.id,
+            type_id=5,
+            message='Has sido degradado a usuario'
+        )
+        db.session.add(new_notification)
+
         db.session.commit()
         return jsonify({'message': 'Admin role removed'}), 200
     except Exception as e:
@@ -966,6 +1045,68 @@ def unblock_user(username):
         db.session.rollback()
         print(e)
         return jsonify({'message': 'Error unblocking user'}), 500
+    
+@app.route('/get_notifications', methods=['GET'])
+def get_notifications():
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}), 401
+
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    notifications = Notification.query.filter_by(user_id=user.id).order_by(Notification.created_at.desc()).all()
+    total_notifications = Notification.query.filter_by(user_id=user.id, read=False).count()
+    
+    notifications_data = [{
+        'id': notification.id,
+        'message': notification.message,
+        'created_at': notification.created_at,
+        'read': notification.read,
+        'total_notifications': total_notifications
+    } for notification in notifications]
+
+    return jsonify(notifications_data), 200
+
+@app.route('/read_notification', methods=['POST'])
+def read_notification():
+    data = request.json
+    notification = Notification.query.get(data['notificationId'])
+    if not notification:
+        return jsonify({'message': 'Notification not found'}), 404
+
+    try:
+        notification.read = True
+        db.session.commit()
+        # reload notifications count
+        total_notifications = Notification.query.filter_by(user_id=notification.user_id, read=False).count()
+        return jsonify({'message': 'Notification read', 'total_notifications': total_notifications}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error reading notification'}), 500
+
+@app.route('/send_system_notification', methods=['POST'])
+def send_system_notification():
+    if session['role'] != 'admin':
+        return jsonify({'message': 'Access denied'}), 403
+
+    data = request.json
+    users = User.query.all()
+    try:
+        for user in users:
+            new_notification = Notification(
+                user_id=user.id,
+                type_id=6,
+                message=data['message']
+            )
+            db.session.add(new_notification)
+        db.session.commit()
+        return jsonify({'message': 'System notification sent'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error sending system notification'}), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
