@@ -18,10 +18,24 @@
     <div class="funcs-of-admin">
       <button class="btn-menu" id="btn-menu">Opciones</button>
       <div class="menu" id="menu">
+        {% if user.user_is_admin == True %}
+        <button class="remove-admin-btn" id="remove-admin-btn" onclick="removeAdmin('{{ user.username }}')">
+          Quitar admin
+        </button>
+        {% else %}
         <button class="give-admin-btn" id="give-admin-btn" onclick="giveAdmin('{{ user.username }}')">
           Dar admin
         </button>
-        <a href="{{ url_for('login') }}">Bloquear usuario</a>
+        {% endif %}
+        {% if user.is_active == False %}
+        <button class="unblock-user-btn" id="unblock-user-btn" onclick="unblockUser('{{ user.username }}')">
+          Desbloquear usuario
+        </button>
+        {% else %}
+        <button class="block-user-btn" id="block-user-btn" onclick="blockUser('{{ user.username }}')">
+          Bloquear usuario
+        </button>
+        {% endif %}
       </div>
     </div>
     {% endif %}

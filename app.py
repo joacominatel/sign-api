@@ -224,6 +224,9 @@ def login():
     
     user = User.query.filter_by(username=username).first()
 
+    if user.is_active == False:
+        return jsonify({'status': 'error', 'message': 'User is blocked'}), 401
+
     if user and check_password_hash(user.password, password):
         session['username'] = user.username
         session['name'] = user.name
@@ -793,6 +796,9 @@ def profile(username):
     if not user:
         return render_template('errors/user_not_found.html', title='Usuario no encontrado')
     
+    if user.is_active == False and session['role'] != 'admin':
+        return render_template('errors/404.html', title='Usuario bloqueado', content='El usuario que buscas ha sido bloqueado', error_number='404')
+
     # current user is admin?
     if session['role'] == 'admin':
         is_admin = True
@@ -803,12 +809,24 @@ def profile(username):
     completed_tasks = db.session.query(func.count(Task.id)).filter(Task.user_id == user.id, Task.completed == True).scalar()
     pending_tasks = db.session.query(func.count(Task.id)).filter(Task.user_id == user.id, Task.completed == False).scalar()
 
+    # get user role
+    user_roles = db.session.query(Roles).join(UserRoles, Roles.id == UserRoles.role_id).filter(UserRoles.user_id == user.id).all()
+    roles = [role.name for role in user_roles]
+
+    if 'admin' in roles:
+        user_is_admin = True
+    else:
+        user_is_admin = False
+
     user_data = {
         'username': user.username,
         'name': user.name,
         'profile_image_url': user.profile_image_url,
         'created_at': user.created_at,
-        'email': user.email
+        'email': user.email,
+        'is_active': user.is_active,
+        'roles': roles,
+        'user_is_admin': user_is_admin
     }
 
     return render_template(
@@ -893,6 +911,61 @@ def give_admin(username):
         db.session.rollback()
         print(e)
         return jsonify({'message': 'Error giving admin role'}), 500
+
+@app.route('/profile/<username>/remove_admin', methods=['POST'])
+def remove_admin(username):
+    if session['role'] != 'admin':
+        return jsonify({'message': 'Access denied'}), 403
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    try:
+        user_role = UserRoles.query.filter_by(user_id=user.id, role_id=1).first()
+        db.session.delete(user_role)
+        db.session.commit()
+        return jsonify({'message': 'Admin role removed'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error removing admin role'}), 500
+    
+@app.route('/profile/<username>/block', methods=['POST'])
+def block_user(username):
+    if session['role'] != 'admin':
+        return jsonify({'message': 'Access denied'}), 403
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    try:
+        user.is_active = False
+        db.session.commit()
+        return jsonify({'message': 'User blocked'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error blocking user'}), 500
+    
+@app.route('/profile/<username>/unblock', methods=['POST'])
+def unblock_user(username):
+    if session['role'] != 'admin':
+        return jsonify({'message': 'Access denied'}), 403
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    try:
+        user.is_active = True
+        db.session.commit()
+        return jsonify({'message': 'User unblocked'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error unblocking user'}), 500
 
 @app.errorhandler(404)
 def page_not_found(e):

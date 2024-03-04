@@ -68,7 +68,7 @@ async function loginUser(e) {
     );
     window.location.href = "/";
   } catch (error) {
-    console.error(error);
+    alert("Error: " + error.response.data.message);
   } finally {
     button.textContent = "Login";
     button.disabled = false;
