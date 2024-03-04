@@ -131,3 +131,69 @@ body section {
     color: #666;
     margin-left: 10px;
 }
+
+.funcs-of-admin {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: 12px;
+    flex-direction: column;
+}
+
+.funcs-of-admin button {
+    padding: 10px 20px;
+    background-color: #2e2e2e;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: .3s;
+}
+
+.funcs-of-admin button:hover {
+    background-color: #333;
+}
+
+.funcs-of-admin .menu {
+    /* drop menu under button */
+    display: none;
+    position: relative;
+    top: 10px;
+    right: 10px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    z-index: 1;
+}
+
+.funcs-of-admin .menu a {
+    display: block;
+    padding: 10px 20px;
+    color: #666;
+    font-size: 16px;
+    text-decoration: none;
+    transition: .3s;
+}
+
+.funcs-of-admin .menu a:hover {
+    background-color: #f5f5f5;
+}
+
+.funcs-of-admin:hover button + .menu {
+    display: flex;
+    flex-direction: column;
+}
+
+.funcs-of-admin .menu a:last-child {
+    border-top: 1px solid #f5f5f5;
+}
+
+.funcs-of-admin .menu a:last-child:hover {
+    background-color: #f5f5f5;
+}
+
+.funcs-of-admin .menu a:last-child:hover {
+    border-radius: 0 0 5px 5px;
+}

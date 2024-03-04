@@ -13,9 +13,19 @@
   <div class="container-body">
     <div class="group-items">
       <div class="leave-button">
+        <!-- if not owner -->
+        {% if user_id != group.owner_id %}
         <button onclick="leaveGroup({{ group.id }})">
           <i class="fas fa-sign-out-alt"></i>
         </button>
+        {% else %}
+        <button onclick="deleteGroup({{ group.id }})">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+        <button onclick="window.location.href='{{ url_for('edit_group', group_id=group.id) }}'">
+          <i class="fas fa-edit"></i>
+        </button>
+        {% endif %}
       </div>
       <div class="miembros">
         <div class="top-card">

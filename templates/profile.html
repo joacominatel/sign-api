@@ -1,59 +1,66 @@
-{% extends 'base.html' %}
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
-{% endblock %}
-
-{% block content %}
+{% extends 'base.html' %} {% block head %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/profile.css') }}"
+/>
+{% endblock %} {% block content %}
 <div class="containerProfile">
-    <div class="profile-header">
-        <img src="{{ url_for('static', filename='img/uploads/' + user.profile_image_url ) }}" alt="profile-image">
-        <div class="profile-name">
-            <h2>{{ user.username }}</h2>
-            <p>{{ user.name }}</p>
+  <div class="profile-header">
+    <img
+      src="{{ url_for('static', filename='img/uploads/' + user.profile_image_url ) }}"
+      alt="profile-image"
+    />
+    <div class="profile-name">
+      <h2>{{ user.username }}</h2>
+      <p>{{ user.name }}</p>
+    </div>
+    {% if is_admin == True %}
+    <div class="funcs-of-admin">
+      <button class="btn-menu" id="btn-menu">Opciones</button>
+      <div class="menu" id="menu">
+        <button class="give-admin-btn" id="give-admin-btn" onclick="giveAdmin('{{ user.username }}')">
+          Dar admin
+        </button>
+        <a href="{{ url_for('login') }}">Bloquear usuario</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  <div class="profile-content">
+    <section id="datosPersonales">
+      <h3>Datos personales</h3>
+      <div class="personal-data">
+        <div class="data">
+          <p>Correo:</p>
+          <p>{{ user.email }}</p>
         </div>
-    </div>
-    <div class="profile-content">
-        <section id="datosPersonales">
-            <h3>Datos personales</h3>
-            <div class="personal-data">
-                <div class="data">
-                    <p>Correo: </p>
-                    <p>{{ user.email }}</p>
-                </div>
-            </div>
-        </section>
-        <section id="estadisticas">
-            <h3>Estadísticas</h3>
-            <div class="statistics">
-                <div class="stat">
-                    <p><strong>Tareas completadas:</strong></p>
-                    <p>
-                    {{ total_tasks }}
-                    </p>
-                </div>
-                <div class="stat">
-                    <p><strong>Tareas pendientes:</strong></p>
-                    <p>
-                    {{ pending_tasks }}
-                    </p>
-                </div>
-                <div class="stat">
-                    <p><strong>Tareas totales creadas:</strong></p>
-                    <p>
-                        {{ completed_tasks }}
-                    </p>
-                </div>
-                <div class="stat">
-                    <p>Fecha de registro:</p>
-                    <p>
-                        {{ user.created_at }}
-                    </p>
-                </div>
-            </div>
-        </section>
-    </div>
-    <div class="profile-body">
-        
-    </div>
+      </div>
+    </section>
+    <section id="estadisticas">
+      <h3>Estadísticas</h3>
+      <div class="statistics">
+        <div class="stat">
+          <p><strong>Tareas completadas:</strong></p>
+          <p>{{ total_tasks }}</p>
+        </div>
+        <div class="stat">
+          <p><strong>Tareas pendientes:</strong></p>
+          <p>{{ pending_tasks }}</p>
+        </div>
+        <div class="stat">
+          <p><strong>Tareas totales creadas:</strong></p>
+          <p>{{ completed_tasks }}</p>
+        </div>
+        <div class="stat">
+          <p>Fecha de registro:</p>
+          <p>{{ user.created_at }}</p>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="profile-body"></div>
 </div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/profile.js') }}"></script>
 {% endblock %}

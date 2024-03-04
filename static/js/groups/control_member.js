@@ -163,3 +163,19 @@ function leaveGroup(group_id) {
             alert(error.response.data.message);
         });
 }
+
+function deleteGroup(group_id) {
+    if (!confirm('Estas seguro que quieres eliminar el grupo?')) {
+        console.log(group_id);
+        return;
+    }
+
+    axios.post('/groups/' + group_id + '/delete')
+        .then(function (response) {
+            alert(response.data.message);
+            window.location.href = '/groups';
+        })
+        .catch(function (error) {
+            alert(error.response.data.message);
+        });
+}

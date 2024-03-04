@@ -579,18 +579,16 @@ a:hover {
 
 .leave-button {
     position: fixed;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     bottom: 20px;
     right: 20px;
     border-radius: 50%;
-    background-color: #ff4d4d;
     color: white;
     border: none;
     cursor: pointer;
     transition: background-color 0.3s ease;
-}
-
-.leave-button:hover {
-    background-color: #ff3333;
 }
 
 .leave-button button {
@@ -607,6 +605,10 @@ a:hover {
     box-shadow: 0 2px 4px rgba(0,0,0,0.3);
     background-color: #ff3333;
     bottom: 23px;
+}
+
+.leave-button button:nth-child(even) {
+    background-color: mediumpurple;
 }
 
 .modal-content#tasksModal {

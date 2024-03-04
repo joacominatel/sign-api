@@ -232,6 +232,11 @@ def login():
         session['updated_at'] = datetime.strftime(user.updated_at, '%Y-%m-%d %H:%M:%S')
         session['email'] = user.email
 
+        # get user roles
+        user_roles = db.session.query(Roles).join(UserRoles, Roles.id == UserRoles.role_id).filter(UserRoles.user_id == user.id).all()
+        roles = [role.name for role in user_roles]
+        session['role'] = roles[0]
+
         response = {
             'status': 'success',
             'message': 'User logged in',
@@ -241,6 +246,7 @@ def login():
             'created_at': datetime.strftime(user.created_at, '%Y-%m-%d %H:%M:%S'),
             'updated_at': datetime.strftime(user.updated_at, '%Y-%m-%d %H:%M:%S'),
             'email': user.email,
+            'role': roles[0]
         }
         return jsonify(response), 200
     return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401
@@ -343,26 +349,30 @@ def dashboard():
         return redirect('/errors/denied')
     
     # get user roles
-    if not any(role.name == 'admin' for role in user.roles):
-        return redirect('/errors/denied')
-    
-    #if admin
-    recent_user = User.query.order_by(User.created_at.desc()).limit(5).all()
-    total_users = db.session.query(func.count(User.id)).scalar()
-    total_tasks = db.session.query(func.count(Task.id)).scalar()
-    total_groups = db.session.query(func.count(Group.id)).scalar()
-    total_roles = db.session.query(func.count(Roles.id)).scalar()
+    user_roles = db.session.query(Roles).join(UserRoles, Roles.id == UserRoles.role_id).filter(UserRoles.user_id == user.id).all()
+    roles = [role.name for role in user_roles]
 
-    # render dashboard
-    return render_template(
-        'admin/dashboard.html',
-        title='Dashboard',
-        users=recent_user,
-        total_users=total_users,
-        total_tasks=total_tasks,
-        total_groups=total_groups,
-        total_roles=total_roles
-    )
+    if 'admin' in roles:
+        #if admin
+        recent_user = User.query.order_by(User.created_at.desc()).limit(5).all()
+        total_users = db.session.query(func.count(User.id)).scalar()
+        total_tasks = db.session.query(func.count(Task.id)).scalar()
+        total_groups = db.session.query(func.count(Group.id)).scalar()
+        total_roles = db.session.query(func.count(Roles.id)).scalar()
+
+        # render dashboard
+        return render_template(
+            'admin/dashboard.html',
+            title='Dashboard',
+            users=recent_user,
+            total_users=total_users,
+            total_tasks=total_tasks,
+            total_groups=total_groups,
+            total_roles=total_roles
+        )
+    else:
+        # if user
+        return render_template('errors/denied.html', title='Acceso denegado')
 
 @app.route('/config_user', methods=['GET'])
 def config_user():
@@ -535,36 +545,45 @@ def group(group_id):
                                tasks=tasks_data,
                                user_tasks=user_tasks_details,
                                posts=posts_details,
-                               upvotes=upvotes)
+                               upvotes=upvotes,
+                               user_id=user.id
+                               )
     except Exception as e:
         print(e)
         return jsonify({'message': 'Error getting group details'}), 500
     
-@app.route('/groups/test_group_tasks', methods=['GET'])
-def test_group_tasks():
-    group_id = 3
-    tasks = GroupTasks.query.filter_by(group_id=group_id).join(Task, Task.id == GroupTasks.task_id).all()
-    # get task_id from group_tasks
-    task_id = [task.task_id for task in tasks]
+@app.route('/groups/<int:group_id>/delete', methods=['POST'])
+def delete_group(group_id):
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}), 401
 
-    # get tasks from task_id
-    tasks = Task.query.filter(Task.id.in_(task_id)).all()
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
 
-    # append all tasks to a list
-    tasks_data = []
-    for task in tasks:
-        tasks_data.append({
-            'id': task.id,
-            'title': task.title,
-            'description': task.description,
-            'due_date': task.due_date,
-            'priority': task.priority,
-            'completed': task.completed,
-            'user_id': task.user_id,
-            'group_id': task.group_id
-        })
+    group = Group.query.get(group_id)
+    print(group)
+    if not group:
+        return jsonify({'message': 'Group not found'}), 404
 
-    return jsonify(tasks_data), 200
+    # Verificar si el usuario es el dueño del grupo
+    if group.owner_id != user.id:
+        return jsonify({'message': 'Access denied'}), 403
+
+    try:
+        # get all members of the group
+        members = GroupMembers.query.filter_by(group_id=group_id).all()
+        for member in members:
+            db.session.delete(member)
+
+        db.session.delete(group)
+        db.session.commit()
+        return jsonify({'message': 'Group deleted'}), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error deleting group'}), 500
 
     
 @app.route('/groups/<int:group_id>/leave', methods=['POST'])
@@ -773,6 +792,12 @@ def profile(username):
     user = User.query.filter_by(username=username).first()
     if not user:
         return render_template('errors/user_not_found.html', title='Usuario no encontrado')
+    
+    # current user is admin?
+    if session['role'] == 'admin':
+        is_admin = True
+    else:
+        is_admin = False
 
     total_tasks = db.session.query(func.count(Task.id)).filter(Task.user_id == user.id).scalar()
     completed_tasks = db.session.query(func.count(Task.id)).filter(Task.user_id == user.id, Task.completed == True).scalar()
@@ -792,7 +817,8 @@ def profile(username):
         total_tasks=total_tasks, 
         completed_tasks=completed_tasks, 
         pending_tasks=pending_tasks, 
-        user=user_data)
+        user=user_data,
+        is_admin=is_admin)
 
 @app.route('/groups/<int:group_id>/posts', methods=['POST'])
 def add_post(group_id):
@@ -848,6 +874,25 @@ def upvote_post(post_id):
         db.session.rollback()
         print(e)
         return jsonify({'message': 'Error upvoting post'}), 500
+    
+@app.route('/profile/<username>/give_admin', methods=['POST'])
+def give_admin(username):
+    if session['role'] != 'admin':
+        return jsonify({'message': 'Access denied'}), 403
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    try:
+        new_user_role = UserRoles(user_id=user.id, role_id=1)
+        db.session.add(new_user_role)
+        db.session.commit()
+        return jsonify({'message': 'Admin role given'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error giving admin role'}), 500
 
 @app.errorhandler(404)
 def page_not_found(e):
