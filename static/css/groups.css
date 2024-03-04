@@ -577,6 +577,38 @@ a:hover {
     transition: background-color 0.3s ease;
 }
 
+.leave-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    border-radius: 50%;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.leave-button:hover {
+    background-color: #ff3333;
+}
+
+.leave-button button {
+    padding: 8px 15px;
+    border-radius: 5px;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.leave-button button:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    background-color: #ff3333;
+    bottom: 23px;
+}
+
 .modal-content#tasksModal {
     display: flex;
     flex-direction: column;

@@ -1,5 +1,11 @@
-function registerUser(e) {
+async function registerUser(e) {
   e.preventDefault();
+
+  const button = document.getElementById("register");
+
+  button.disabled = true;
+  button.textContent = "Registering...";
+  button.classList.add("loading");
 
   let username = document.getElementById("username").value;
   let name = document.getElementById("name").value;
@@ -19,17 +25,21 @@ function registerUser(e) {
     email: email,
   };
 
-  // post data to server
-  axios
-    .post("/register", data)
-    .then((res) => {
-      alert("User registered");
-      window.location.href = "/";
-    })
-    .catch((err) => {
-      console.log(err);
-      alert("Error registering user");
-    });
+  try {
+    const response = await axios.post("/register", data);
+    alert(
+      `Usuario ${response.data.username} registrado con éxito!`
+    );
+    window.location.href = "/";
+  }
+  catch (error) {
+    console.error(error);
+  }
+  finally {
+    button.textContent = "Register";
+    button.disabled = false;
+    button.classList.remove("loading");
+  }
 }
 
 async function loginUser(e) {

@@ -148,3 +148,18 @@ function upVotePost(postId) {
             console.log(error);
         });
 }
+
+function leaveGroup(group_id) {
+    if (!confirm('Estas seguro que quieres abandonar el grupo?')) {
+        return;
+    }
+
+    axios.post('/groups/' + group_id + '/leave')
+        .then(function (response) {
+            alert(response.data.message);
+            window.location.href = '/groups';
+        })
+        .catch(function (error) {
+            alert(error.response.data.message);
+        });
+}

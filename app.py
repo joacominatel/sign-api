@@ -16,6 +16,7 @@ from backend.models.Roles import Roles
 from backend.models.GroupMembers import GroupMembers
 from backend.models.GroupPosts import GroupPosts
 from backend.models.PostUpVotes import PostUpVotes
+from backend.models.GroupTasks import GroupTasks
 
 # SQLALCHEMY
 from sqlalchemy.exc import SQLAlchemyError
@@ -196,7 +197,7 @@ def register():
         session['username'] = data['username']
         session['name'] = data['name']
         session['email'] = data['email']
-        session['profile_image_url'] = '/static/default-user.webp'
+        session['profile_image_url'] = '../default-user.webp'
         session['created_at'] = datetime.strftime(new_user.created_at, '%Y-%m-%d %H:%M:%S')
         session['updated_at'] = datetime.strftime(new_user.updated_at, '%Y-%m-%d %H:%M:%S')
         session['role'] = 'user'
@@ -392,11 +393,14 @@ def groups():
     groups_data = []
     for group in user_groups:
         total_members = db.session.query(func.count(GroupMembers.id)).filter(GroupMembers.group_id == group.id).scalar()
-        total_tasks = db.session.query(func.count(Task.id)).filter(Task.group_id == group.id).scalar()
+        total_tasks = db.session.query(
+            func.count(GroupTasks.id)
+        ).filter(GroupTasks.group_id == group.id).scalar()
         groups_data.append({
             'group': group,
             'total_members': total_members,
-            'total_tasks': total_tasks
+            'total_tasks': total_tasks,
+            'owner': group.owner_id == user.id,
         })
 
     return render_template('groups/groups.html',
@@ -460,8 +464,11 @@ def group(group_id):
 
     try:
         members = User.query.join(GroupMembers, User.id == GroupMembers.user_id).filter(GroupMembers.group_id == group_id).all()
-        tasks = Task.query.filter_by(group_id=group_id).all()
-        user_tasks = Task.query.filter(Task.user_id == user.id, Task.group_id == None).all()
+        tasks = GroupTasks.query.filter_by(group_id=group_id).join(Task, Task.id == GroupTasks.task_id).all()
+        # get task_id from group_tasks
+        task_id = [task.task_id for task in tasks]
+        tasks = Task.query.filter(Task.id.in_(task_id)).all()
+        user_tasks = Task.query.filter(Task.user_id == user.id, or_(Task.group_id != group_id, Task.group_id == None)).all()
         posts = GroupPosts.query.filter_by(group_id=group_id).all()
         
         upvotes = []
@@ -486,17 +493,16 @@ def group(group_id):
                 'profile_image_url': member.profile_image_url
             })
 
-        tasks_details = []
+        tasks_data = []
         for task in tasks:
-            tasks_details.append({
+            tasks_data.append({
                 'id': task.id,
                 'title': task.title,
                 'description': task.description,
                 'due_date': task.due_date,
                 'priority': task.priority,
                 'completed': task.completed,
-                'user_id': task.user_id,
-                'group_id': task.group_id
+                'user_id': task.user_id
             })
 
         user_tasks_details = []
@@ -526,13 +532,81 @@ def group(group_id):
         return render_template('groups/group.html',
                                group=group_details,
                                members=members_details,
-                               tasks=tasks_details,
+                               tasks=tasks_data,
                                user_tasks=user_tasks_details,
                                posts=posts_details,
                                upvotes=upvotes)
     except Exception as e:
         print(e)
-        return jsonify({'message': 'Error getting group details'}), 500 
+        return jsonify({'message': 'Error getting group details'}), 500
+    
+@app.route('/groups/test_group_tasks', methods=['GET'])
+def test_group_tasks():
+    group_id = 3
+    tasks = GroupTasks.query.filter_by(group_id=group_id).join(Task, Task.id == GroupTasks.task_id).all()
+    # get task_id from group_tasks
+    task_id = [task.task_id for task in tasks]
+
+    # get tasks from task_id
+    tasks = Task.query.filter(Task.id.in_(task_id)).all()
+
+    # append all tasks to a list
+    tasks_data = []
+    for task in tasks:
+        tasks_data.append({
+            'id': task.id,
+            'title': task.title,
+            'description': task.description,
+            'due_date': task.due_date,
+            'priority': task.priority,
+            'completed': task.completed,
+            'user_id': task.user_id,
+            'group_id': task.group_id
+        })
+
+    return jsonify(tasks_data), 200
+
+    
+@app.route('/groups/<int:group_id>/leave', methods=['POST'])
+def leave_group(group_id):
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}), 401
+
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    # Verificar si el grupo existe
+    group = Group.query.get(group_id)
+    if not group:
+        return jsonify({'message': 'Group not found'}), 404
+
+    # Verificar si el usuario es miembro del grupo
+    is_member = GroupMembers.query.filter_by(group_id=group_id, user_id=user.id).first()
+    if not is_member:
+        return jsonify({'message': 'Access denied'}), 403
+    
+    # verificar si es el dueño del grupo
+    if group.owner_id == user.id:
+        return jsonify({'message': 'Owner cannot leave group'}), 403
+    
+    # hacer un post en el grupo que el usuario se fue
+    try:
+        new_post = GroupPosts(group_id=group_id, user_id=user.id, title=f'{user.username} se ha ido del grupo', content=f'{user.username} se ha ido del grupo', created_at=datetime.now(), updated_at=datetime.now())
+        db.session.add(new_post)
+        db.session.flush()  # Esto permite usar el ID del post antes de hacer commit
+
+        # Añadir automáticamente un upvote del usuario al post
+        upvote = PostUpVotes(post_id=new_post.id, user_id=user.id)
+        db.session.add(upvote)
+
+        db.session.delete(is_member)
+        db.session.commit()
+        return jsonify({'message': 'Left group'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error leaving group'}), 500
 
 
 @app.route('/groups/<int:group_id>/add_member', methods=['POST'])
@@ -651,8 +725,8 @@ def edit_group(group_id):
         return jsonify({'message': 'Group not found'}), 404
     
     try:
-        group.name = data['name']
-        group.description = data['description']
+        group.name = data['groupName']
+        group.description = data['groupDescription']
         db.session.commit()
         return jsonify({'message': 'Group updated'}), 200
     except Exception as e:
@@ -662,19 +736,30 @@ def edit_group(group_id):
     
 @app.route('/groups/<int:group_id>/edit_group', methods=['GET'])
 def edit_group_form(group_id):
-    return render_template('groups/edit_group.html', group_id=group_id)
+    if 'username' not in session:
+        return redirect('/errors/denied')
+
+    group = Group.query.get(group_id)
+
+    if not group:
+        return render_template('errors/404.html', title='Grupo no encontrado', content='El grupo que buscas no existe', error_number='404')
+    
+    return render_template('groups/edit_group.html', title=f'Editar {group.name}', group=group)
 
 @app.route('/groups/<int:group_id>/add_task', methods=['POST'])
 def add_task_to_group(group_id):
     data = request.json
     task = Task.query.get(data['taskId'])
+
     if not task:
         return jsonify({'message': 'Task not found'}), 404
     
     try:
-        task.group_id = group_id
+        new_group_task = GroupTasks(group_id=group_id, task_id=task.id)
+        db.session.add(new_group_task)
         db.session.commit()
         return jsonify({'message': 'Task added to group'}), 200
+    
     except Exception as e:
         db.session.rollback()
         print(e)
