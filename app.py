@@ -51,6 +51,19 @@ def inject_notifications():
         return dict(unreaded_notifications=unreaded_notifications, notifications=notifications)
     else:
         return {}
+    
+@app.context_processor
+def inject_roles():
+    if 'username' in session:
+        user = User.query.filter_by(username=session['username']).first()
+        if not user:
+            return {}
+        
+        user_roles = db.session.query(Roles).join(UserRoles, Roles.id == UserRoles.role_id).filter(UserRoles.user_id == user.id).all()
+        roles = [role.name for role in user_roles]
+        return dict(roles=roles)
+    else:
+        return {}
 
 # Main page
 @app.route('/', methods=['GET'])
@@ -156,6 +169,17 @@ def add_task():
 
         # Añade la tarea a la base de datos
         db.session.add(new_task)
+
+        # send notification to all members of the group
+        members = GroupMembers.query.filter_by(user_id=user.id).all()
+        for member in members:
+            new_notification = Notification(
+                user_id=member.user_id,
+                type_id=7,
+                message=f'{user.username} ha añadido una nueva tarea'
+            )
+            db.session.add(new_notification)
+
         db.session.commit()
 
         return jsonify({'message': 'Task added successfully'}), 201
@@ -711,10 +735,18 @@ def delete_member(group_id):
     if not is_member:
         return jsonify({'message': 'Access denied'}), 403
     
+    # Verificar si el usuario que esta eliminando es el dueño del grupo
+    if group.owner_id != user.id:
+        return jsonify({'message': 'Access denied'}), 403
+    
     # Verificar si el usuario a eliminar es miembro del grupo
     member_to_delete = GroupMembers.query.filter_by(group_id=group_id, user_id=data['userId']).first()
     if not member_to_delete:
         return jsonify({'message': 'User not a member'}), 404
+    
+    # verificar si el usuario a eliminar es el dueño del grupo
+    if group.owner_id == data['userId']:
+        return jsonify({'message': 'Owner cannot be deleted'}), 403
     
     try:
         db.session.delete(member_to_delete)
@@ -827,6 +859,41 @@ def add_task_to_group(group_id):
         db.session.rollback()
         print(e)
         return jsonify({'message': 'Error adding task to group'}), 500
+    
+@app.route('/groups/<int:group_id>/delete_task', methods=['POST'])
+def delete_task_from_group(group_id):
+    data = request.json
+    task = Task.query.get(data['taskId'])
+
+    if not task:
+        return jsonify({'message': 'Task not found'}), 404
+    
+    # check if the user that is deleting the task is the owner of the task or the group
+    group = Group.query.get(group_id)
+    if group.owner_id != task.user_id:
+        return jsonify({'message': 'Access denied'}), 403
+    
+    try:
+        group_task = GroupTasks.query.filter_by(group_id=group_id, task_id=task.id).first()
+        db.session.delete(group_task)
+        
+        # send notification to all members of the group
+        members = GroupMembers.query.filter_by(group_id=group_id).all()
+        for member in members:
+            new_notification = Notification(
+                user_id=member.user_id,
+                type_id=8,
+                message=f'{task.title} ha sido eliminada del grupo'
+            )
+            db.session.add(new_notification)
+        
+        db.session.commit()
+        return jsonify({'message': 'Task deleted from group'}), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error deleting task from group'}), 500
     
 @app.route('/profile/<username>/', methods=['GET'])
 def profile(username):

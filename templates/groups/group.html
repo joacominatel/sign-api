@@ -102,8 +102,10 @@
         <ul>
           {% if tasks == [] %}
           <li>No hay tareas</li>
-          {% endif %} {% for task in tasks %}
-          <div class="task-info">
+          {% endif %} 
+          {% for task in tasks %}
+          <div class="task-info"
+          onclick="removeTaskFromGroup({{ task.id }})">
             <aside class="left">
               <li>
                 <h2>Titulo: {{ task.title }}</h2>

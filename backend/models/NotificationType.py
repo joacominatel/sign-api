@@ -21,7 +21,7 @@ class NotificationType(db.Model):
     
     @staticmethod
     def insert_types():
-        types = ['New Group', 'New Upvote', 'New Post', 'Deleted from Group', 'Admin privileges', 'System Notification']
+        types = ['New Group', 'New Upvote', 'New Post', 'Deleted from Group', 'Admin privileges', 'System Notification', 'New Task', 'Deleted Task']
         for type in types:
             notification_type = NotificationType.query.filter_by(name=type).first()
             if notification_type is None:

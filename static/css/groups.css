@@ -291,6 +291,7 @@ a:hover {
     width: -webkit-fill-available;
     width: fill-available;
     min-width: 600px;
+    cursor: pointer;
 }
 
 .group-items .tareas ul .task-info:hover {
