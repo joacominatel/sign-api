@@ -58,6 +58,7 @@
                             {% else %}
                             {% for notification in notifications %}
                             <li
+                            id="notification-{{ notification['id'] }}"
                             {% if notification['read'] == False %}
                             class="unread"
                             onclick="readNotification( {{ notification['id'] }} )"
