@@ -15,6 +15,12 @@ def init_app(app):
         from backend.models.Roles import Roles
         Roles.insert_roles()
 
+        from backend.models.NotificationType import NotificationType
+        NotificationType.insert_types()
+
+        from backend.models.User import User
+        User.insert_admin_user()
+
         db.session.commit()
         
     return db

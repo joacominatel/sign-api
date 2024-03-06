@@ -115,3 +115,47 @@ window.addEventListener("scroll", function() {
   }
   lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
 });
+
+function showNotifications() {
+  const notifications = document.getElementById("notification-list");
+  notifications.classList.toggle("show");
+} 
+
+function readNotification(notificationId) {
+  axios
+    .post("/read_notification", {
+      notificationId: notificationId,
+    })
+    .then(function (response) {
+      console.log("Notification read");
+      // remove notification from list
+      const notification = document.getElementById(`notification-${notificationId}`);
+      notification.remove();
+
+      // check if there are no more notifications
+      const notifications = document.getElementById("notification-list"); // div
+      // get ul inside div
+      const ul = notifications.querySelector("ul");
+      if (ul.children.length === 0) {
+        const noNotifications = document.createElement("li");
+        // create <a>
+        const a = document.createElement("a");
+        a.href = "#";
+        // create <p>
+        const p = document.createElement("p");
+        p.textContent = "No notifications";
+        a.appendChild(p);
+        noNotifications.appendChild(a);
+        ul.appendChild(noNotifications);
+      }
+
+      // update notifications count
+      const notificationsCount = document.getElementById("notification-count");
+      notificationsCount.textContent = ul.children.length;
+      
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
+
+}

@@ -291,6 +291,7 @@ a:hover {
     width: -webkit-fill-available;
     width: fill-available;
     min-width: 600px;
+    cursor: pointer;
 }
 
 .group-items .tareas ul .task-info:hover {
@@ -575,6 +576,40 @@ a:hover {
     border: none;
     cursor: pointer;
     transition: background-color 0.3s ease;
+}
+
+.leave-button {
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    bottom: 20px;
+    right: 20px;
+    border-radius: 50%;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.leave-button button {
+    padding: 8px 15px;
+    border-radius: 5px;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.leave-button button:hover {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    background-color: #ff3333;
+    bottom: 23px;
+}
+
+.leave-button button:nth-child(even) {
+    background-color: mediumpurple;
 }
 
 .modal-content#tasksModal {

@@ -40,7 +40,8 @@
                     </div>
                     <div class="group-card-funcs">
                         <a href="{{ url_for('group', group_id=group.group.id ) }}">Ver grupo</a>
-                        {% if group.total_members == user_id %}
+                        <!-- if groups.owner is true -->
+                        {% if group.owner == true %}
                             <a href="{{ url_for('edit_group', group_id=group.group.id ) }}">Editar grupo</a>
                         {% endif %}
                     </div>

@@ -15,6 +15,7 @@
     padding: 20px;
     margin-bottom: 20px;
     border-radius: 24px;   
+    gap: 25px;
 }
 
 .container-admin .stats .stat {
@@ -115,4 +116,71 @@
 .user-search-result:active {
     transition: all 0.3s ease;
     background-color: #fff2f2;
+}
+
+.send-system-notification-form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    width: 100%;
+}
+
+.send-system-notification-form h2 {
+    margin-bottom: 20px;
+}
+
+.send-system-notification-form form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.send-system-notification-form form .group {
+    width: 100%;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+
+}
+
+.send-system-notification-form form .group textarea {
+    width: 100%;
+    height: 200px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #0d0c22;
+    outline: none;
+    resize: none;
+    margin-bottom: 20px;
+}
+
+.send-system-notification-form form button {
+    width: 100%;
+    height: 40px;
+    border: none;
+    border-radius: 8px;
+    background-color: #ea4c89;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-bottom: 25px;
+    transition: all 0.3s ease;
+}
+
+.send-system-notification-form form button:hover {
+    background-color: #ff6baf;
+}
+
+.send-system-notification-form form button:active {
+    background-color: #ff6baf;
+}
+
+.send-system-notification-form form .group label {
+    margin-bottom: 10px;
 }

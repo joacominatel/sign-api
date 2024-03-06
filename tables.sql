@@ -17,11 +17,17 @@ CREATE TABLE tasks (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id),
   title VARCHAR(255) NOT NULL,
-  group_id INTEGER REFERENCES groups(id),
+  -- group_id INTEGER REFERENCES groups(id),
   description TEXT,
   due_date DATE,
   priority INTEGER DEFAULT 0,
   completed BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE group_tasks (
+  id SERIAL PRIMARY KEY,
+  group_id INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  task_id INTEGER NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
 );
 
 -- Create table groups for share tasks with other users
@@ -78,20 +84,3 @@ CREATE TABLE post_upvotes (
   PRIMARY KEY (post_id, user_id)
 );
 
--- add view for stats of complete app, count of users, tasks and groups
-CREATE OR REPLACE VIEW app_stats AS
-SELECT
-  (SELECT COUNT(*) FROM users) AS users_count,
-  (SELECT COUNT(*) FROM tasks) AS tasks_count,
-  (SELECT COUNT(*) FROM groups) AS groups_count;
-
-
--- Inser user admin
-INSERT INTO users (username, password, name, email, profile_image_url)
-VALUES ('admin', 'admin', 'Admin', 'admin@admin.com' ,'../default-user.webp');
-
-INSERT INTO roles (name) VALUES ('admin');
-INSERT INTO roles (name) VALUES ('user');
-
--- cambiar nombre de database
-ALTER DATABASE taskapp RENAME TO taskapp_dev;

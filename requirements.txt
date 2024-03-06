@@ -1,5 +1,6 @@
-flask
-python-dotenv
-flask_sqlalchemy
-werkzeug
-psychopg2
+# Python version: 3.12.2
+flask[3.0.2]
+python-dotenv[1.0.1]
+flask_sqlalchemy[3.1.1]
+werkzeug[3.0.1]
+psycopg2[2.9.9]

@@ -10,10 +10,10 @@ document.getElementById('userSearchInput').addEventListener('input', function(e)
                     userDiv.className = 'user-search-result';
 
                     // if user[1] is not null, then it means that the user have image
-                    if (user[1] != null) {
-                        userDiv.innerHTML = '<img src="/static/img/uploads/' + user[1] + '" width="50" height="50" style="border-radius: 50%;">' + user[0];
+                    if (user.profile_image_url != null) {
+                        userDiv.innerHTML = '<img src="/static/img/uploads/' + user.profile_image_url + '" width="50" height="50" style="border-radius: 50%;">' + user.username;
                     } else {
-                        userDiv.innerHTML = '<img src="/static/img/default-user.webp" width="50" height="50" style="border-radius: 50%;">' + user[0];
+                        userDiv.innerHTML = '<img src="/static/img/default-user.webp" width="50" height="50" style="border-radius: 50%;">' + user.username;
                     }
                     
                     userDiv.onclick = function() {
@@ -33,4 +33,18 @@ document.getElementById('userSearchResults').addEventListener('click', function(
         var username = e.target.textContent;
         location.href = '/profile/' + username;
     }
+});
+
+document.getElementById('sendSystemNotificationForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const message = document.getElementById('notificationMessage').value;
+
+    axios.post('/send_system_notification', { message: message })
+         .then(function(response) {
+             alert(`System notification sent to ${response.data} users`);
+         })
+         .catch(function(error) {
+            alert('Error sending system notification');
+         });
 });

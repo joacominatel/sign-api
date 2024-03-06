@@ -1,5 +1,11 @@
-function registerUser(e) {
+async function registerUser(e) {
   e.preventDefault();
+
+  const button = document.getElementById("register");
+
+  button.disabled = true;
+  button.textContent = "Registering...";
+  button.classList.add("loading");
 
   let username = document.getElementById("username").value;
   let name = document.getElementById("name").value;
@@ -19,20 +25,30 @@ function registerUser(e) {
     email: email,
   };
 
-  // post data to server
-  axios
-    .post("/register", data)
-    .then((res) => {
-      alert("User registered");
-      window.location.href = "/";
-    })
-    .catch((err) => {
-      console.log(err);
-      alert("Error registering user");
-    });
+  try {
+    const response = await axios.post("/register", data);
+    alert(
+      `Usuario ${response.data.user} registrado con éxito!`
+    );
+    window.location.href = "/";
+  }
+  catch (error) {
+    alert("Error: " + error.response.data.message);
+  }
+  finally {
+    button.textContent = "Register";
+    button.disabled = false;
+    button.classList.remove("loading");
+  }
 }
 
-function loginUser(e) {
+async function loginUser(e) {
+  const button = document.getElementById("register");
+  
+  button.disabled = true;
+  button.textContent = "Logging in...";
+  button.classList.add("loading");
+  
   e.preventDefault();
 
   // check if in input #username is an email or username
@@ -44,23 +60,18 @@ function loginUser(e) {
     password: password,
   };
 
-  // post data to server
-  axios
-    .post("/login", data)
-    .then((res) => {
-      const response = res.data;
-      if (response.status === "error") {
-        alert(response.message);
-        return;
-      } else {
-        alert("User logged in");
-        setTimeout(() => {
-          window.location.href = "/";
-        }, 1000);
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-      alert("Error logging in user");
-    });
+
+  try {
+    const response = await axios.post("/login", data);
+    alert(
+      `Logueado con el usuario ${response.data.username}!`
+    );
+    window.location.href = "/";
+  } catch (error) {
+    alert("Error: " + error.response.data.message);
+  } finally {
+    button.textContent = "Login";
+    button.disabled = false;
+    button.classList.remove("loading");
+  }
 }

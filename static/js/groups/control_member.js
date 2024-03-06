@@ -100,24 +100,28 @@ window.onclick = function(event) {
     }
 }
 
-function addTaskToGroup(taskId) {
-    axios.post('/groups/' + GROUP_ID + '/add_task', { taskId: taskId })
-        .then(function (response) {
-            console.log(response);
-            modalTask.style.display = "none";
-            window.location.reload();
-        }
-    )
+async function addTaskToGroup(taskId) {
+    try {
+        const response = await axios.post('/groups/' + GROUP_ID + '/add_task', { taskId: taskId });
+        alert(response.data.message);
+        window.location.reload();
+    } catch (error) {
+        alert(error.response.data.message);
+    }
 }
 
-function deleteMemberFromGroup(memberId) {
-    axios.post('/groups/' + GROUP_ID + '/delete_member', { memberId: memberId })
+function deleteMemberFromGroup(userId) {
+    if (!confirm('Estas seguro que quieres eliminar al miembro del grupo?')) {
+        return;
+    }
+
+    axios.post('/groups/' + GROUP_ID + '/delete_member', { userId: userId })
         .then(function (response) {
             alert(response.data.message);
             window.location.reload();
         })
         .catch(function (error) {
-            console.log(error);
+            alert(error.response.data.message);
         });
 }
 
@@ -147,4 +151,49 @@ function upVotePost(postId) {
         .catch(function (error) {
             console.log(error);
         });
+}
+
+function leaveGroup(group_id) {
+    if (!confirm('Estas seguro que quieres abandonar el grupo?')) {
+        return;
+    }
+
+    axios.post('/groups/' + group_id + '/leave')
+        .then(function (response) {
+            alert(response.data.message);
+            window.location.href = '/groups';
+        })
+        .catch(function (error) {
+            alert(error.response.data.message);
+        });
+}
+
+function deleteGroup(group_id) {
+    if (!confirm('Estas seguro que quieres eliminar el grupo?')) {
+        console.log(group_id);
+        return;
+    }
+
+    axios.post('/groups/' + group_id + '/delete')
+        .then(function (response) {
+            alert(response.data.message);
+            window.location.href = '/groups';
+        })
+        .catch(function (error) {
+            alert(error.response.data.message);
+        });
+}
+
+async function removeTaskFromGroup(taskId) {
+    if (!confirm('Estas seguro que quieres eliminar la tarea?')) {
+        return;
+    }
+
+    try {
+        const response = await axios.post('/groups/' + GROUP_ID + '/delete_task', { taskId: taskId });
+        alert(response.data.message);
+        window.location.reload();
+    } catch (error) {
+        alert(error.response.data.message);
+    }
 }

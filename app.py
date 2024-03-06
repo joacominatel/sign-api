@@ -16,6 +16,9 @@ from backend.models.Roles import Roles
 from backend.models.GroupMembers import GroupMembers
 from backend.models.GroupPosts import GroupPosts
 from backend.models.PostUpVotes import PostUpVotes
+from backend.models.GroupTasks import GroupTasks
+from backend.models.NotificationType import NotificationType
+from backend.models.Notifications import Notification
 
 # SQLALCHEMY
 from sqlalchemy.exc import SQLAlchemyError
@@ -35,6 +38,33 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = init_app(app)
 
+@app.context_processor
+def inject_notifications():
+    if 'username' in session:
+        user = User.query.filter_by(username=session['username']).first()
+        if not user:
+            return {}
+        
+        notifications = Notification.query.filter_by(user_id=user.id, read=False).order_by(Notification.created_at.desc()).limit(5).all()
+
+        unreaded_notifications = db.session.query(func.count(Notification.id)).filter(Notification.user_id == user.id, Notification.read == False).scalar()
+        return dict(unreaded_notifications=unreaded_notifications, notifications=notifications)
+    else:
+        return {}
+    
+@app.context_processor
+def inject_roles():
+    if 'username' in session:
+        user = User.query.filter_by(username=session['username']).first()
+        if not user:
+            return {}
+        
+        user_roles = db.session.query(Roles).join(UserRoles, Roles.id == UserRoles.role_id).filter(UserRoles.user_id == user.id).all()
+        roles = [role.name for role in user_roles]
+        return dict(roles=roles)
+    else:
+        return {}
+
 # Main page
 @app.route('/', methods=['GET'])
 def main():
@@ -43,8 +73,8 @@ def main():
         user = User.query.filter_by(username=session['username']).first()
         if not user:
             return redirect('/errors/denied')
-        
         tasks = Task.query.filter_by(user_id=user.id).order_by(Task.priority).all()
+
         return render_template('index.html', tasks=tasks)
     else:
         return render_template('index.html')
@@ -139,6 +169,17 @@ def add_task():
 
         # Añade la tarea a la base de datos
         db.session.add(new_task)
+
+        # send notification to all members of the group
+        members = GroupMembers.query.filter_by(user_id=user.id).all()
+        for member in members:
+            new_notification = Notification(
+                user_id=member.user_id,
+                type_id=7,
+                message=f'{user.username} ha añadido una nueva tarea'
+            )
+            db.session.add(new_notification)
+
         db.session.commit()
 
         return jsonify({'message': 'Task added successfully'}), 201
@@ -196,12 +237,12 @@ def register():
         session['username'] = data['username']
         session['name'] = data['name']
         session['email'] = data['email']
-        session['profile_image_url'] = '/static/default-user.webp'
+        session['profile_image_url'] = '../default-user.webp'
         session['created_at'] = datetime.strftime(new_user.created_at, '%Y-%m-%d %H:%M:%S')
         session['updated_at'] = datetime.strftime(new_user.updated_at, '%Y-%m-%d %H:%M:%S')
         session['role'] = 'user'
 
-        return jsonify({'status': 'success', 'message': 'User registered'}), 201
+        return jsonify({'status': 'success', 'message': 'User registered', 'user': session['username']}), 201
     except SQLAlchemyError as e:
         db.session.rollback()
         print(str(e))
@@ -223,6 +264,12 @@ def login():
     
     user = User.query.filter_by(username=username).first()
 
+    if not user:
+        return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401
+
+    if user.is_active == False:
+        return jsonify({'status': 'error', 'message': 'User is blocked'}), 401
+
     if user and check_password_hash(user.password, password):
         session['username'] = user.username
         session['name'] = user.name
@@ -230,6 +277,11 @@ def login():
         session['created_at'] = datetime.strftime(user.created_at, '%Y-%m-%d %H:%M:%S')
         session['updated_at'] = datetime.strftime(user.updated_at, '%Y-%m-%d %H:%M:%S')
         session['email'] = user.email
+
+        # get user roles
+        user_roles = db.session.query(Roles).join(UserRoles, Roles.id == UserRoles.role_id).filter(UserRoles.user_id == user.id).all()
+        roles = [role.name for role in user_roles]
+        session['role'] = roles[0]
 
         response = {
             'status': 'success',
@@ -240,6 +292,7 @@ def login():
             'created_at': datetime.strftime(user.created_at, '%Y-%m-%d %H:%M:%S'),
             'updated_at': datetime.strftime(user.updated_at, '%Y-%m-%d %H:%M:%S'),
             'email': user.email,
+            'role': roles[0]
         }
         return jsonify(response), 200
     return jsonify({'status': 'error', 'message': 'Invalid username or password'}), 401
@@ -342,26 +395,30 @@ def dashboard():
         return redirect('/errors/denied')
     
     # get user roles
-    if not any(role.name == 'admin' for role in user.roles):
-        return redirect('/errors/denied')
-    
-    #if admin
-    recent_user = User.query.order_by(User.created_at.desc()).limit(5).all()
-    total_users = db.session.query(func.count(User.id)).scalar()
-    total_tasks = db.session.query(func.count(Task.id)).scalar()
-    total_groups = db.session.query(func.count(Group.id)).scalar()
-    total_roles = db.session.query(func.count(Roles.id)).scalar()
+    user_roles = db.session.query(Roles).join(UserRoles, Roles.id == UserRoles.role_id).filter(UserRoles.user_id == user.id).all()
+    roles = [role.name for role in user_roles]
 
-    # render dashboard
-    return render_template(
-        'admin/dashboard.html',
-        title='Dashboard',
-        users=recent_user,
-        total_users=total_users,
-        total_tasks=total_tasks,
-        total_groups=total_groups,
-        total_roles=total_roles
-    )
+    if 'admin' in roles:
+        #if admin
+        recent_user = User.query.order_by(User.created_at.desc()).limit(5).all()
+        total_users = db.session.query(func.count(User.id)).scalar()
+        total_tasks = db.session.query(func.count(Task.id)).scalar()
+        total_groups = db.session.query(func.count(Group.id)).scalar()
+        total_roles = db.session.query(func.count(Roles.id)).scalar()
+
+        # render dashboard
+        return render_template(
+            'admin/dashboard.html',
+            title='Dashboard',
+            users=recent_user,
+            total_users=total_users,
+            total_tasks=total_tasks,
+            total_groups=total_groups,
+            total_roles=total_roles
+        )
+    else:
+        # if user
+        return render_template('errors/denied.html', title='Acceso denegado')
 
 @app.route('/config_user', methods=['GET'])
 def config_user():
@@ -392,11 +449,14 @@ def groups():
     groups_data = []
     for group in user_groups:
         total_members = db.session.query(func.count(GroupMembers.id)).filter(GroupMembers.group_id == group.id).scalar()
-        total_tasks = db.session.query(func.count(Task.id)).filter(Task.group_id == group.id).scalar()
+        total_tasks = db.session.query(
+            func.count(GroupTasks.id)
+        ).filter(GroupTasks.group_id == group.id).scalar()
         groups_data.append({
             'group': group,
             'total_members': total_members,
-            'total_tasks': total_tasks
+            'total_tasks': total_tasks,
+            'owner': group.owner_id == user.id,
         })
 
     return render_template('groups/groups.html',
@@ -423,7 +483,12 @@ def create_group():
         db.session.add(new_member)
         
         db.session.commit()
-        return jsonify({'message': 'Group created', 'group_id': new_group.id}), 201
+        return jsonify(
+            {
+                'message': 'Group created',
+                'group_id': new_group.id,
+                'group_name': new_group.name
+            }), 201
 
     except SQLAlchemyError as e:
         db.session.rollback()
@@ -455,8 +520,11 @@ def group(group_id):
 
     try:
         members = User.query.join(GroupMembers, User.id == GroupMembers.user_id).filter(GroupMembers.group_id == group_id).all()
-        tasks = Task.query.filter_by(group_id=group_id).all()
-        user_tasks = Task.query.filter(Task.user_id == user.id, Task.group_id == None).all()
+        tasks = GroupTasks.query.filter_by(group_id=group_id).join(Task, Task.id == GroupTasks.task_id).all()
+        # get task_id from group_tasks
+        task_id = [task.task_id for task in tasks]
+        tasks = Task.query.filter(Task.id.in_(task_id)).all()
+        user_tasks = Task.query.filter(Task.user_id == user.id, or_(Task.group_id != group_id, Task.group_id == None)).all()
         posts = GroupPosts.query.filter_by(group_id=group_id).all()
         
         upvotes = []
@@ -481,17 +549,16 @@ def group(group_id):
                 'profile_image_url': member.profile_image_url
             })
 
-        tasks_details = []
+        tasks_data = []
         for task in tasks:
-            tasks_details.append({
+            tasks_data.append({
                 'id': task.id,
                 'title': task.title,
                 'description': task.description,
                 'due_date': task.due_date,
                 'priority': task.priority,
                 'completed': task.completed,
-                'user_id': task.user_id,
-                'group_id': task.group_id
+                'user_id': task.user_id
             })
 
         user_tasks_details = []
@@ -521,13 +588,90 @@ def group(group_id):
         return render_template('groups/group.html',
                                group=group_details,
                                members=members_details,
-                               tasks=tasks_details,
+                               tasks=tasks_data,
                                user_tasks=user_tasks_details,
                                posts=posts_details,
-                               upvotes=upvotes)
+                               upvotes=upvotes,
+                               user_id=user.id
+                               )
     except Exception as e:
         print(e)
-        return jsonify({'message': 'Error getting group details'}), 500 
+        return jsonify({'message': 'Error getting group details'}), 500
+    
+@app.route('/groups/<int:group_id>/delete', methods=['POST'])
+def delete_group(group_id):
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}), 401
+
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    group = Group.query.get(group_id)
+    print(group)
+    if not group:
+        return jsonify({'message': 'Group not found'}), 404
+
+    # Verificar si el usuario es el dueño del grupo
+    if group.owner_id != user.id:
+        return jsonify({'message': 'Access denied'}), 403
+
+    try:
+        # get all members of the group
+        members = GroupMembers.query.filter_by(group_id=group_id).all()
+        for member in members:
+            db.session.delete(member)
+
+        db.session.delete(group)
+        db.session.commit()
+        return jsonify({'message': 'Group deleted'}), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error deleting group'}), 500
+
+    
+@app.route('/groups/<int:group_id>/leave', methods=['POST'])
+def leave_group(group_id):
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}), 401
+
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    # Verificar si el grupo existe
+    group = Group.query.get(group_id)
+    if not group:
+        return jsonify({'message': 'Group not found'}), 404
+
+    # Verificar si el usuario es miembro del grupo
+    is_member = GroupMembers.query.filter_by(group_id=group_id, user_id=user.id).first()
+    if not is_member:
+        return jsonify({'message': 'Access denied'}), 403
+    
+    # verificar si es el dueño del grupo
+    if group.owner_id == user.id:
+        return jsonify({'message': 'Owner cannot leave group'}), 403
+    
+    # hacer un post en el grupo que el usuario se fue
+    try:
+        new_post = GroupPosts(group_id=group_id, user_id=user.id, title=f'{user.username} se ha ido del grupo', content=f'{user.username} se ha ido del grupo', created_at=datetime.now(), updated_at=datetime.now())
+        db.session.add(new_post)
+        db.session.flush()  # Esto permite usar el ID del post antes de hacer commit
+
+        # Añadir automáticamente un upvote del usuario al post
+        upvote = PostUpVotes(post_id=new_post.id, user_id=user.id)
+        db.session.add(upvote)
+
+        db.session.delete(is_member)
+        db.session.commit()
+        return jsonify({'message': 'Left group'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error leaving group'}), 500
 
 
 @app.route('/groups/<int:group_id>/add_member', methods=['POST'])
@@ -553,6 +697,16 @@ def add_member(group_id):
     try:
         new_member = GroupMembers(group_id=group_id, user_id=user_to_add.id)
         db.session.add(new_member)
+
+
+        # send notification to user
+        new_notification = Notification(
+            user_id=user_to_add.id,
+            type_id=1,
+            message=f'Has sido añadido al grupo {group.name}'
+        )
+        db.session.add(new_notification)
+
         db.session.commit()
         return jsonify({'message': 'Member added'}), 201
     except Exception as e:
@@ -581,14 +735,31 @@ def delete_member(group_id):
     if not is_member:
         return jsonify({'message': 'Access denied'}), 403
     
+    # Verificar si el usuario que esta eliminando es el dueño del grupo
+    if group.owner_id != user.id:
+        return jsonify({'message': 'Access denied'}), 403
+    
     # Verificar si el usuario a eliminar es miembro del grupo
     member_to_delete = GroupMembers.query.filter_by(group_id=group_id, user_id=data['userId']).first()
     if not member_to_delete:
         return jsonify({'message': 'User not a member'}), 404
     
+    # verificar si el usuario a eliminar es el dueño del grupo
+    if group.owner_id == data['userId']:
+        return jsonify({'message': 'Owner cannot be deleted'}), 403
+    
     try:
         db.session.delete(member_to_delete)
+
+        # send notification to user
+        new_notification = Notification(
+            user_id=data['userId'],
+            type_id=4,
+            message=f'Has sido eliminado del grupo {group.name}'
+        )
+        db.session.add(new_notification)
         db.session.commit()
+        
         return jsonify({'message': 'Member deleted'}), 200
     
     except Exception as e:
@@ -618,12 +789,15 @@ def search_users():
         ).label('is_member')
     ).filter(
         User.username.ilike(f"%{username_query}%"),
-        User.username != session['username']
+        User.username != session['username'],
+        User.is_active == True,
+        
     )
 
     # Ajustar la consulta si se proporciona group_id
     if group_id:
         query = query.outerjoin(GroupMembers, and_(GroupMembers.user_id == User.id, GroupMembers.group_id == group_id))
+        query = query.filter(GroupMembers.group_id == None)  # Exclude users already in the group
     else:
         query = query.limit(5)  # Limitar los resultados si no se busca dentro de un grupo específico
 
@@ -646,45 +820,85 @@ def edit_group(group_id):
         return jsonify({'message': 'Group not found'}), 404
     
     try:
-        group.name = data['name']
-        group.description = data['description']
+        group.name = data['groupName']
+        group.description = data['groupDescription']
         db.session.commit()
         return jsonify({'message': 'Group updated'}), 200
     except Exception as e:
         db.session.rollback()
         print(e)
-        return jsonify({'message': 'Error updating group'}), 500
+        return jsonify({'message': 'Error updating group'})
     
-@app.route('/groups/<int:group_id>/delete_group', methods=['POST'])
-def delete_group(group_id):
+@app.route('/groups/<int:group_id>/edit_group', methods=['GET'])
+def edit_group_form(group_id):
+    if 'username' not in session:
+        return redirect('/errors/denied')
+
     group = Group.query.get(group_id)
+
     if not group:
-        return jsonify({'message': 'Group not found'}), 404
+        return render_template('errors/404.html', title='Grupo no encontrado', content='El grupo que buscas no existe', error_number='404')
     
-    try:
-        db.session.delete(group)
-        db.session.commit()
-        return jsonify({'message': 'Group deleted'}), 200
-    except Exception as e:
-        db.session.rollback()
-        print(e)
-        return jsonify({'message': 'Error deleting group'}), 500
+    return render_template('groups/edit_group.html', title=f'Editar {group.name}', group=group)
 
 @app.route('/groups/<int:group_id>/add_task', methods=['POST'])
 def add_task_to_group(group_id):
     data = request.json
     task = Task.query.get(data['taskId'])
+
     if not task:
         return jsonify({'message': 'Task not found'}), 404
     
+    # check if the task is already in the group
+    group_task = GroupTasks.query.filter_by(group_id=group_id, task_id=task.id).first()
+    if group_task:
+        return jsonify({'message': 'Task already in group'}), 409
+    
     try:
-        task.group_id = group_id
+        new_group_task = GroupTasks(group_id=group_id, task_id=task.id)
+        db.session.add(new_group_task)
         db.session.commit()
         return jsonify({'message': 'Task added to group'}), 200
+    
     except Exception as e:
         db.session.rollback()
         print(e)
         return jsonify({'message': 'Error adding task to group'}), 500
+    
+@app.route('/groups/<int:group_id>/delete_task', methods=['POST'])
+def delete_task_from_group(group_id):
+    data = request.json
+    task = Task.query.get(data['taskId'])
+
+    if not task:
+        return jsonify({'message': 'Task not found'}), 404
+    
+    # check if the user that is deleting the task is the owner of the task or the group
+    group = Group.query.get(group_id)
+    if group.owner_id != task.user_id:
+        return jsonify({'message': 'Access denied'}), 403
+    
+    try:
+        group_task = GroupTasks.query.filter_by(group_id=group_id, task_id=task.id).first()
+        db.session.delete(group_task)
+        
+        # send notification to all members of the group
+        members = GroupMembers.query.filter_by(group_id=group_id).all()
+        for member in members:
+            new_notification = Notification(
+                user_id=member.user_id,
+                type_id=8,
+                message=f'{task.title} ha sido eliminada del grupo'
+            )
+            db.session.add(new_notification)
+        
+        db.session.commit()
+        return jsonify({'message': 'Task deleted from group'}), 200
+    
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error deleting task from group'}), 500
     
 @app.route('/profile/<username>/', methods=['GET'])
 def profile(username):
@@ -694,17 +908,38 @@ def profile(username):
     user = User.query.filter_by(username=username).first()
     if not user:
         return render_template('errors/user_not_found.html', title='Usuario no encontrado')
+    
+    if user.is_active == False and session['role'] != 'admin':
+        return render_template('errors/404.html', title='Usuario bloqueado', content='El usuario que buscas ha sido bloqueado', error_number='404')
+
+    # current user is admin?
+    if session['role'] == 'admin':
+        is_admin = True
+    else:
+        is_admin = False
 
     total_tasks = db.session.query(func.count(Task.id)).filter(Task.user_id == user.id).scalar()
     completed_tasks = db.session.query(func.count(Task.id)).filter(Task.user_id == user.id, Task.completed == True).scalar()
     pending_tasks = db.session.query(func.count(Task.id)).filter(Task.user_id == user.id, Task.completed == False).scalar()
+
+    # get user role
+    user_roles = db.session.query(Roles).join(UserRoles, Roles.id == UserRoles.role_id).filter(UserRoles.user_id == user.id).all()
+    roles = [role.name for role in user_roles]
+
+    if 'admin' in roles:
+        user_is_admin = True
+    else:
+        user_is_admin = False
 
     user_data = {
         'username': user.username,
         'name': user.name,
         'profile_image_url': user.profile_image_url,
         'created_at': user.created_at,
-        'email': user.email
+        'email': user.email,
+        'is_active': user.is_active,
+        'roles': roles,
+        'user_is_admin': user_is_admin
     }
 
     return render_template(
@@ -713,7 +948,8 @@ def profile(username):
         total_tasks=total_tasks, 
         completed_tasks=completed_tasks, 
         pending_tasks=pending_tasks, 
-        user=user_data)
+        user=user_data,
+        is_admin=is_admin)
 
 @app.route('/groups/<int:group_id>/posts', methods=['POST'])
 def add_post(group_id):
@@ -730,6 +966,16 @@ def add_post(group_id):
         new_post = GroupPosts(group_id=group_id, user_id=user.id, title=data['title'], content=data['content'], created_at=datetime.now(), updated_at=datetime.now())
         db.session.add(new_post)
         db.session.flush()  # Esto permite usar el ID del post antes de hacer commit
+
+        # send notification to all members of the group
+        members = GroupMembers.query.filter_by(group_id=group_id).all()
+        for member in members:
+            new_notification = Notification(
+                user_id=member.user_id,
+                type_id=3,
+                message=f'{user.username} ha publicado en el grupo'
+            )
+            db.session.add(new_notification)
 
         # Añadir automáticamente un upvote del usuario al post
         upvote = PostUpVotes(post_id=new_post.id, user_id=user.id)
@@ -763,12 +1009,176 @@ def upvote_post(post_id):
     try:
         new_upvote = PostUpVotes(post_id=post_id, user_id=user.id)
         db.session.add(new_upvote)
+        
+        # send notification to user
+        new_notification = Notification(
+            user_id=post.user_id,
+            type_id=2,
+            message=f'{user.username} ha dado like a tu post'
+        )
+        db.session.add(new_notification)
+
         db.session.commit()
+
         return jsonify({'message': 'Post upvoted'}), 200
     except Exception as e:
         db.session.rollback()
         print(e)
         return jsonify({'message': 'Error upvoting post'}), 500
+    
+@app.route('/profile/<username>/give_admin', methods=['POST'])
+def give_admin(username):
+    if session['role'] != 'admin':
+        return jsonify({'message': 'Access denied'}), 403
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    try:
+        new_user_role = UserRoles(user_id=user.id, role_id=1)
+        db.session.add(new_user_role)
+
+        # send notification to user
+        new_notification = Notification(
+            user_id=user.id,
+            type_id=5,
+            message='Has sido promovido a administrador'
+        )
+        db.session.add(new_notification)
+
+        db.session.commit()
+        return jsonify({'message': 'Admin role given'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error giving admin role'}), 500
+
+@app.route('/profile/<username>/remove_admin', methods=['POST'])
+def remove_admin(username):
+    if session['role'] != 'admin':
+        return jsonify({'message': 'Access denied'}), 403
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    try:
+        user_role = UserRoles.query.filter_by(user_id=user.id, role_id=1).first()
+        db.session.delete(user_role)
+
+        # send notification to user
+        new_notification = Notification(
+            user_id=user.id,
+            type_id=5,
+            message='Has sido degradado a usuario'
+        )
+        db.session.add(new_notification)
+
+        db.session.commit()
+        return jsonify({'message': 'Admin role removed'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error removing admin role'}), 500
+    
+@app.route('/profile/<username>/block', methods=['POST'])
+def block_user(username):
+    if session['role'] != 'admin':
+        return jsonify({'message': 'Access denied'}), 403
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    try:
+        user.is_active = False
+        db.session.commit()
+        return jsonify({'message': 'User blocked'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error blocking user'}), 500
+    
+@app.route('/profile/<username>/unblock', methods=['POST'])
+def unblock_user(username):
+    if session['role'] != 'admin':
+        return jsonify({'message': 'Access denied'}), 403
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    try:
+        user.is_active = True
+        db.session.commit()
+        return jsonify({'message': 'User unblocked'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error unblocking user'}), 500
+    
+@app.route('/get_notifications', methods=['GET'])
+def get_notifications():
+    if 'username' not in session:
+        return jsonify({'message': 'User not logged in'}), 401
+
+    user = User.query.filter_by(username=session['username']).first()
+    if not user:
+        return jsonify({'message': 'User not found'}), 404
+
+    notifications = Notification.query.filter_by(user_id=user.id).order_by(Notification.created_at.desc()).all()
+    total_notifications = Notification.query.filter_by(user_id=user.id, read=False).count()
+    
+    notifications_data = [{
+        'id': notification.id,
+        'message': notification.message,
+        'created_at': notification.created_at,
+        'read': notification.read,
+        'total_notifications': total_notifications
+    } for notification in notifications]
+
+    return jsonify(notifications_data), 200
+
+@app.route('/read_notification', methods=['POST'])
+def read_notification():
+    data = request.json
+    notification = Notification.query.get(data['notificationId'])
+    if not notification:
+        return jsonify({'message': 'Notification not found'}), 404
+
+    try:
+        notification.read = True
+        db.session.commit()
+        # reload notifications count
+        total_notifications = Notification.query.filter_by(user_id=notification.user_id, read=False).count()
+        return jsonify({'message': 'Notification read', 'total_notifications': total_notifications}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error reading notification'}), 500
+
+@app.route('/send_system_notification', methods=['POST'])
+def send_system_notification():
+    if session['role'] != 'admin':
+        return jsonify({'message': 'Access denied'}), 403
+
+    data = request.json
+    users = User.query.all()
+    try:
+        for user in users:
+            new_notification = Notification(
+                user_id=user.id,
+                type_id=6,
+                message=data['message']
+            )
+            db.session.add(new_notification)
+        db.session.commit()
+        return jsonify({'message': 'System notification sent'}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(e)
+        return jsonify({'message': 'Error sending system notification'}), 500
 
 @app.errorhandler(404)
 def page_not_found(e):

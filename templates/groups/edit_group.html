@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="group-edit">
+    <h1>Edit Group</h1>
+    <form action="{{ url_for('edit_group', group_id=group.id) }}" method="POST" id="edit-group-form">
+        <label for="name">Name</label>
+        <input type="text" name="name" value="{{ group.name }}" id="group-name">
+        <label for="description">Description</label>
+        <input type="text" name="description" value="{{ group.description }}" id="group-description">
+        <input type="submit" value="Edit" id="edit-group-submit">
+    </form>
+    <a href="{{ url_for('group', group_id=group.id) }}">Back</a>
+</div>  
+  <style>
+    .group-edit {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .group-edit form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .group-edit form input {
+        padding: 8px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+    }
+
+    .group-edit form input[type="submit"] {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+
+    .group-edit form input[type="submit"]:hover {
+        background-color: #0056b3;
+    }
+  </style>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/groups/edit_group.js') }}"></script>
+{% endblock %}

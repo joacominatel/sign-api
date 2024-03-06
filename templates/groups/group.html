@@ -12,6 +12,21 @@
   </div>
   <div class="container-body">
     <div class="group-items">
+      <div class="leave-button">
+        <!-- if not owner -->
+        {% if user_id != group.owner_id %}
+        <button onclick="leaveGroup({{ group.id }})">
+          <i class="fas fa-sign-out-alt"></i>
+        </button>
+        {% else %}
+        <button onclick="deleteGroup({{ group.id }})">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+        <button onclick="window.location.href='{{ url_for('edit_group', group_id=group.id) }}'">
+          <i class="fas fa-edit"></i>
+        </button>
+        {% endif %}
+      </div>
       <div class="miembros">
         <div class="top-card">
           <h2>Miembros</h2>
@@ -87,8 +102,10 @@
         <ul>
           {% if tasks == [] %}
           <li>No hay tareas</li>
-          {% endif %} {% for task in tasks %}
-          <div class="task-info">
+          {% endif %} 
+          {% for task in tasks %}
+          <div class="task-info"
+          onclick="removeTaskFromGroup({{ task.id }})">
             <aside class="left">
               <li>
                 <h2>Titulo: {{ task.title }}</h2>
@@ -102,7 +119,7 @@
                 <h3>Fecha: {{ task.due_date }}</h3>
               </li>
               <li>
-                {% if task.completed == 'f' %}
+                {% if task.completed == False %}
                 <p>Estado: Pendiente</p>
                 {% else %}
                 <p>Estado: Completada</p>
@@ -155,10 +172,10 @@
             <p>{{ post.content }}</p>
             <div class="funcs">
               <div class="upvotes">
-                <button onclick="upVotePost({{ post[0] }})">
+                <button onclick="upVotePost({{ post.id }})">
                   <i class="fas fa-thumbs-up"></i>
                 </button>
-                <p>{{ upvotes[0] }}</p>
+                <p>{{ upvotes[loop.index0] }}</p>
               </div>
                 <button class="delete" onclick="">
                   <i class="fas fa-trash-alt"></i>

@@ -12,12 +12,12 @@ async function createGroup() {
             name,
             description
         });
-        alert('Grupo creado correctamente');
-} catch (error) {
+        alert(
+            `Grupo ${response.data.group_name} creado correctamente con id ${response.data.group_id}!`
+        );
+        window.location.href = `/groups/${response.data.group_id}`;
+    } catch (error) {
         console.error(error);
-        button.disabled = false;
-        button.textContent = 'Crear grupo';
-        button.classList.remove('loading');
     } finally {
         button.disabled = false;
         button.textContent = 'Crear grupo';

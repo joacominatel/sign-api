@@ -24,19 +24,8 @@
                 <li>
                 <span>
                     <i class="fas fa-tasks"></i>
-                    <a href="{{ url_for('login') }}">{{ task.title }}</a>
+                    <a href="{{ url_for('tasks') }}">{{ task.title }}</a>
                 </span>
-                <div class="buttons-funcs">
-                    <!-- input checkbox if completed -->
-                    <input class="task-checkbox" type="checkbox" {% if task.completed == True %}
-                    checked {% endif %} data-id="{{ task.id }}"
-                    onchange="updateTaskCompletion(this)">
-                    <div class="delete-button">
-                        <button onclick="deleteTask(this)" data-id="{{ task.id }}">
-                        <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </div>
-                </div>
                 </li>
                 <!-- si hay menos de 3 tareas mostrar mensaje -->
                 {% if loop.last %}

@@ -9,16 +9,25 @@
         <div class="stats">
             <div class="stat">
                 <p>Total Users</p>
-                <h2>{{ total_users[0] }}</h2>
+                <h2>{{ total_users }}</h2>
             </div>
             <div class="stat">
                 <p>Total Tasks</p>
-                <h2>{{ total_tasks[0] }}</h2>
+                <h2>{{ total_tasks }}</h2>
             </div>
             <div class="stat">
                 <p>Total Groups</p>
-                <h2>{{ total_groups[0] }}</h2>
+                <h2>{{ total_groups }}</h2>
             </div>
+        </div>
+        <div class="send-system-notification-form">
+            <h2>Send System Notification</h2>
+            <form id="sendSystemNotificationForm">
+                <div class="group">
+                    <textarea id="notificationMessage" class="input" required></textarea>
+                </div>
+                <button type="submit" class="btn">Send</button>
+            </form>
         </div>
         <div class="user-list">
             <div class="group">
