@@ -15,6 +15,7 @@
     padding: 20px;
     margin-bottom: 20px;
     border-radius: 24px;   
+    gap: 25px;
 }
 
 .container-admin .stats .stat {

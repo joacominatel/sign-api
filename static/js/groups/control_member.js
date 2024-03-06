@@ -100,14 +100,14 @@ window.onclick = function(event) {
     }
 }
 
-function addTaskToGroup(taskId) {
-    axios.post('/groups/' + GROUP_ID + '/add_task', { taskId: taskId })
-        .then(function (response) {
-            console.log(response);
-            modalTask.style.display = "none";
-            window.location.reload();
-        }
-    )
+async function addTaskToGroup(taskId) {
+    try {
+        const response = await axios.post('/groups/' + GROUP_ID + '/add_task', { taskId: taskId });
+        alert(response.data.message);
+        window.location.reload();
+    } catch (error) {
+        alert(error.response.data.message);
+    }
 }
 
 function deleteMemberFromGroup(userId) {

@@ -849,6 +849,11 @@ def add_task_to_group(group_id):
     if not task:
         return jsonify({'message': 'Task not found'}), 404
     
+    # check if the task is already in the group
+    group_task = GroupTasks.query.filter_by(group_id=group_id, task_id=task.id).first()
+    if group_task:
+        return jsonify({'message': 'Task already in group'}), 409
+    
     try:
         new_group_task = GroupTasks(group_id=group_id, task_id=task.id)
         db.session.add(new_group_task)

@@ -26,3 +26,28 @@ class User(db.Model):
 
     def __repr__(self):
         return f'<User {self.username}>'
+
+    @classmethod
+    def insert_admin_user(cls):
+        from backend.models.Roles import Roles
+        from backend.models.UserRoles import UserRoles
+        from backend.models.User import User
+        from backend.db import db
+        from datetime import datetime
+
+        admin = User.query.filter_by(username='admin').first()
+        if admin is None:
+            admin = User(
+                username='admin',
+                name='Admin',
+                email='admin@admin.com',
+                password='admin',
+                created_at=datetime.now(),
+                updated_at=datetime.now()
+            )
+            db.session.add(admin)
+            db.session.commit()
+
+        else:
+            print('Username: admin')
+            print('Password: admin')
