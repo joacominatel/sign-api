@@ -1,5 +1,5 @@
 # GENERALES 
-import flask, os
+import flask, os, subprocess
 from flask import jsonify, request, render_template, redirect, session
 from dotenv import load_dotenv
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -7,27 +7,31 @@ from werkzeug.utils import secure_filename
 from datetime import datetime
 
 # MODELOS
-from backend.db import init_app, db
-from backend.models.User import User
-from backend.models.UserRoles import UserRoles
-from backend.models.Tasks import Task
-from backend.models.Groups import Group
-from backend.models.Roles import Roles
-from backend.models.GroupMembers import GroupMembers
-from backend.models.GroupPosts import GroupPosts
-from backend.models.PostUpVotes import PostUpVotes
-from backend.models.GroupTasks import GroupTasks
-from backend.models.NotificationType import NotificationType
-from backend.models.Notifications import Notification
+from sql.db import init_app, db
+from sql.models.User import User
+from sql.models.UserRoles import UserRoles
+from sql.models.Tasks import Task
+from sql.models.Groups import Group
+from sql.models.Roles import Roles
+from sql.models.GroupMembers import GroupMembers
+from sql.models.GroupPosts import GroupPosts
+from sql.models.PostUpVotes import PostUpVotes
+from sql.models.GroupTasks import GroupTasks
+from sql.models.NotificationType import NotificationType
+from sql.models.Notifications import Notification
 
 # SQLALCHEMY
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload, aliased
 from sqlalchemy.sql import func, exists, and_, or_
 
+# websocket for notifications
+from flask_socketio import SocketIO, emit
+
 load_dotenv('.env')
 
 app = flask.Flask(__name__)
+socketio = SocketIO(app, debug=True, cors_allowed_origins='*', async_mode='threading')
 
 # Secret key
 app.secret_key = os.environ['SECRET_KEY']
@@ -37,6 +41,43 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['SQLALCHEMY_DATABASE_URI']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = init_app(app)
+
+# @socketio.on('connect')
+# def checkping():
+#     for x in range(0, 10):
+#         cmd = 'ping -c 1 8.8.8.8 | head -n 2 | tail -n 1 | awk \'{print $7}\''
+#         listing1 = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+#         listing2 = listing1.communicate()
+#         print(listing2[0])
+#         socketio.emit('ping', {'ping': listing2[0].decode('utf-8')})
+#         socketio.sleep(1)
+
+@socketio.on('notification')
+def notification(data):
+    if 'username' in session:
+        user = User.query.filter_by(username=session['username']).first()
+        if not user:
+            return
+        
+        new_notification = Notification(
+            user_id=user.id,
+            type_id=data['type_id'],
+            message=data['message']
+        )
+        db.session.add(new_notification)
+        db.session.commit()
+        emit('notification', {'message': 'Notification sent'}, broadcast=True)
+
+# socket for check if user has received a notification while online
+@socketio.on('check_notification')
+def check_notification(data):
+    if 'username' in session:
+        user = User.query.filter_by(username=session['username']).first()
+        if not user:
+            return
+        
+        unreaded_notifications = db.session.query(func.count(Notification.id)).filter(Notification.user_id == user.id, Notification.read == False).scalar()
+        emit('check_notification', {'unreaded_notifications': unreaded_notifications}, broadcast=True)
 
 @app.context_processor
 def inject_notifications():

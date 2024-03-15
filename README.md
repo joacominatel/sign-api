@@ -28,7 +28,7 @@ UPLOAD_FOLDER = 'static/img/uploads'
 En esta version se utiliza SQLAlchemy para ordenar las tablas y automatizar algunos procesos. Por ejemplo,
 la creacion de estas y la generacion de los dos roles principales (user, admin).
 
-Esta en la carpeta /backend donde podemos encontrar el archivo db.py que establece la conexion. Y dentro de /backend/models 
+Esta en la carpeta /sql donde podemos encontrar el archivo db.py que establece la conexion. Y dentro de /sql/models 
 estan todos los modelos de cada tabla, de esta forma se mantiene otro orden y se asegura que no haya errores al crear
 la base de datos.
 

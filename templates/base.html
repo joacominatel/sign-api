@@ -17,6 +17,9 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <!-- notifications toaster -->
     <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+    <!-- socketio -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.js"></script>
+
     {% block head %}{% endblock %}
 </head>
 <body>
@@ -146,5 +149,21 @@
     {% block scripts %}{% endblock %}
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+    <script>
+        const socket = io('http://localhost:8001');
+        socket.on('connect', () => {
+            console.log('connected');
+        });
+
+        socket.on('check_notifications', (data) => {
+            console.log(data);
+            if (data['notifications'] > 0) {
+                document.getElementById('notification-count').style.display = 'block';
+                document.getElementById('notification-count').innerText = data['notifications'];
+            } else {
+                document.getElementById('notification-count').style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-from backend.db import db
+from sql.db import db
 import datetime
 
 class Task(db.Model):

@@ -1,4 +1,4 @@
-from backend.db import db
+from sql.db import db
 
 class GroupPosts(db.Model):
     __tablename__ = 'group_posts'

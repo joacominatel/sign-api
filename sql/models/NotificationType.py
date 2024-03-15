@@ -1,5 +1,5 @@
 from datetime import datetime
-from backend.db import db
+from sql.db import db
 
 class NotificationType(db.Model):
     __tablename__ = 'notification_type'

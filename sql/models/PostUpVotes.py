@@ -1,4 +1,4 @@
-from backend.db import db
+from sql.db import db
 
 class PostUpVotes(db.Model):
     __tablename__ = 'post_upvotes'

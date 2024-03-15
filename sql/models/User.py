@@ -1,4 +1,4 @@
-from backend.db import db
+from sql.db import db
 
 class User(db.Model):
     __tablename__ = 'users'
@@ -29,10 +29,10 @@ class User(db.Model):
 
     @classmethod
     def insert_admin_user(cls):
-        from backend.models.Roles import Roles
-        from backend.models.UserRoles import UserRoles
-        from backend.models.User import User
-        from backend.db import db
+        from sql.models.Roles import Roles
+        from sql.models.UserRoles import UserRoles
+        from sql.models.User import User
+        from sql.db import db
         from datetime import datetime
 
         admin = User.query.filter_by(username='admin').first()
